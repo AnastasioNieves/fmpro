@@ -25,7 +25,7 @@ export function Dashboard() {
   useEffect(() => {
     if (!teams.data || teams.data.length <= 1) return;
     const interval = setInterval(() => {
-      setCurrentTeamIndex((prev) => (prev + 1) % teams.data.length);
+      setCurrentTeamIndex((prev) => (prev + 1) % teams.data!.length);
     }, 30000);
     return () => clearInterval(interval);
   }, [teams.data]);
@@ -104,8 +104,6 @@ export function Dashboard() {
 
   const recentGoalsFor = recentMatches.map(m => m.teamScore ?? 0);
   const recentGoalsAgainst = recentMatches.map(m => m.opponentScore ?? 0);
-  const recentOpponents = recentMatches.map(m => m.opponentName ? m.opponentName.substring(0, 3).toUpperCase() : 'M');
-  const maxGoals = Math.max(1, ...recentGoalsFor, ...recentGoalsAgainst);
 
   return (
     <div className="page">

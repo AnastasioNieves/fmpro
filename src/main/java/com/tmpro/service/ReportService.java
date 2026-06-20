@@ -42,10 +42,8 @@ public class ReportService {
     // CLEAN PREMIUM STYLE
     private static final DeviceRgb BRAND_BG = new DeviceRgb(255, 255, 255); // Fondo blanco
     private static final DeviceRgb BRAND_ACCENT = new DeviceRgb(52, 211, 153); // Verde Neón (Cabeceras tabla)
-    private static final DeviceRgb BRAND_ACCENT_DIM = new DeviceRgb(5, 150, 105);
     private static final DeviceRgb TEXT_DARK = new DeviceRgb(15, 23, 42); // Texto principal oscuro
     private static final DeviceRgb TEXT_MUTED = new DeviceRgb(71, 85, 105); // Texto gris
-    private static final DeviceRgb TEXT_LIGHT = new DeviceRgb(15, 23, 42); // En Clean Premium, los textos sobre fondos claros son oscuros. (Nota: cabeceras irán con texto oscuro sobre verde)
     private static final SolidBorder BORDER = new SolidBorder(new DeviceRgb(226, 232, 240), 0.8f);
 
     @Autowired
@@ -145,7 +143,6 @@ public class ReportService {
             agg.goals += stat.getGoals();
             agg.assists += stat.getAssists();
             agg.minutes += stat.getMinutesPlayed();
-            agg.matches++;
             agg.shotsOnTarget += stat.getShotsOnTarget();
             agg.shotsTotal += stat.getShotsTotal();
             agg.passesCompleted += stat.getPassesCompleted();
@@ -290,15 +287,6 @@ public class ReportService {
                 .setMarginBottom(8);
     }
 
-    private static Paragraph summaryLine(String text) {
-        return new Paragraph(text)
-                .setFontSize(11)
-                .setBold()
-                .setFontColor(TEXT_DARK)
-                .setMarginTop(10)
-                .setMarginBottom(0);
-    }
-
     private static Paragraph footerLine() {
         return new Paragraph("Generado: " + DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm").format(LocalDateTime.now()))
                 .setFontSize(9)
@@ -372,7 +360,6 @@ public class ReportService {
         private int goals;
         private int assists;
         private int minutes;
-        private int matches;
         private int shotsOnTarget;
         private int shotsTotal;
         private int passesCompleted;
