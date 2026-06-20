@@ -1,0 +1,26 @@
+# Base de datos local H2
+/data/
+*.mv.db
+*.trace.db
+
+# Build
+/build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# Entorno
+.env
+.env.local
+*.log
+
+# Caches and Uploads
+.gradle/
+uploads/
+.tools/

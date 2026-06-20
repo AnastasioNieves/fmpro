@@ -1,0 +1,55 @@
+
+@startuml
+
+entity "User" as user {
+    + id : Long
+    + username : String [PK]
+    + password : String
+    + role_id : Long [FK]
+}
+
+entity "Role" as role {
+    + id : Long
+    + name : String [PK]
+}
+
+entity "Team" as team {
+    + id : Long
+    + team_name : String [PK]
+    + coach_id : Long [FK]
+}
+
+entity "Player" as player {
+    + id : Long
+    + name : String [PK]
+    + position : String
+    + dorsal : String
+    + team_id : Long [FK]
+}
+
+entity "Match" as match {
+    + id : Long
+    + date : Date [PK]
+    + location : String
+    + team_1_id : Long [FK]
+    + team_2_id : Long [FK]
+}
+
+entity "Statistic" as statistic {
+    + id : Long [PK]
+    + player_name : Long [FK]
+    + match_date : Long [FK]
+    + goals : int
+    + assists : int
+    + minutes_played : int
+}
+
+user --|> role : role_id
+team --|> user : coach_id
+player --|> team : team_id
+match --|> team : team_1_id
+match --|> team : team_2_id
+statistic --|> player : player_name
+statistic --|> match : match_date
+
+@enduml
