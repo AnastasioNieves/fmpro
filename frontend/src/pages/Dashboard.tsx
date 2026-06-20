@@ -102,8 +102,7 @@ export function Dashboard() {
     return 'E';
   });
 
-  const recentGoalsFor = recentMatches.map(m => m.teamScore ?? 0);
-  const recentGoalsAgainst = recentMatches.map(m => m.opponentScore ?? 0);
+
 
   return (
     <div className="page">
