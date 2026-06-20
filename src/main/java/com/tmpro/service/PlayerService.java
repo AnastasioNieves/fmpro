@@ -43,9 +43,7 @@ public class PlayerService {
         if (teamIds.isEmpty()) {
             return List.of();
         }
-        return playerRepository.findAllWithTeam().stream()
-                .filter(p -> p.getTeam() != null && teamIds.contains(p.getTeam().getId()))
-                .collect(Collectors.toList());
+        return playerRepository.findAllWithTeamByTeamIdIn(teamIds);
     }
 
     public Optional<Player> findByName(String name) {

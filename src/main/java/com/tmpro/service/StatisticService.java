@@ -68,14 +68,15 @@ public class StatisticService {
 
     @Transactional(readOnly = true)
     public StatisticsSummaryDTO getSummary() {
-        List<Statistic> all = statisticRepository.findAll();
-        int goals = 0;
-        int assists = 0;
-        for (Statistic stat : all) {
-            goals += stat.getGoals();
-            assists += stat.getAssists();
+        List<Object[]> results = statisticRepository.getAggregatedSummary();
+        if (results == null || results.isEmpty() || results.get(0) == null) {
+            return new StatisticsSummaryDTO(0, 0, 0);
         }
-        return new StatisticsSummaryDTO(all.size(), goals, assists);
+        Object[] row = results.get(0);
+        int count = row[0] != null ? ((Number) row[0]).intValue() : 0;
+        int goals = row[1] != null ? ((Number) row[1]).intValue() : 0;
+        int assists = row[2] != null ? ((Number) row[2]).intValue() : 0;
+        return new StatisticsSummaryDTO(count, goals, assists);
     }
 
     @Transactional
@@ -86,6 +87,15 @@ public class StatisticService {
                     statistic.setAssists(updatedStatistic.getAssists());
                     statistic.setMinutesPlayed(updatedStatistic.getMinutesPlayed());
                     statistic.setMatch(updatedStatistic.getMatch());
+                    statistic.setShotsTotal(updatedStatistic.getShotsTotal());
+                    statistic.setShotsOnTarget(updatedStatistic.getShotsOnTarget());
+                    statistic.setPassesTotal(updatedStatistic.getPassesTotal());
+                    statistic.setPassesCompleted(updatedStatistic.getPassesCompleted());
+                    statistic.setDuelsTotal(updatedStatistic.getDuelsTotal());
+                    statistic.setDuelsWon(updatedStatistic.getDuelsWon());
+                    statistic.setInterceptions(updatedStatistic.getInterceptions());
+                    statistic.setSaves(updatedStatistic.getSaves());
+                    statistic.setGoalsConceded(updatedStatistic.getGoalsConceded());
                     return statisticRepository.save(statistic);
                 })
                 .orElseThrow(() -> new RuntimeException("Estadística no encontrada"));

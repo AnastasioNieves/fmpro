@@ -30,4 +30,7 @@ public interface StatisticRepository extends JpaRepository<Statistic, Long> {
     List<Statistic> findByMatchIdWithPlayer(@Param("matchId") Long matchId);
 
     Optional<Statistic> findByMatchEntityIdAndPlayerId(Long matchEntityId, Long playerId);
+
+    @Query("SELECT COUNT(s), SUM(s.goals), SUM(s.assists) FROM Statistic s")
+    List<Object[]> getAggregatedSummary();
 }
