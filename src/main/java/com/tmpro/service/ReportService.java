@@ -220,31 +220,56 @@ public class ReportService {
                 .setMarginTop(16)
                 .setMarginBottom(6));
 
-        Table table = new Table(UnitValue.createPercentArray(new float[] { 3, 1, 1, 1, 1, 1, 1, 1, 1 }))
-                .useAllAvailableWidth();
+        // Calcular número de columnas y sus pesos (ancho)
+        List<Float> columnWidths = new ArrayList<>();
+        columnWidths.add(3f); // Jugador
+        columnWidths.add(1f); // Minutos
+        
+        boolean showG = isFWD || isMID || isDEF || (!isGK && !isDEF && !isMID && !isFWD);
+        boolean showA = isFWD || isMID || (!isGK && !isDEF && !isMID && !isFWD);
+        boolean showTir = isFWD || isMID;
+        boolean showPas = isMID || isDEF || isGK;
+        boolean showDuel = isMID || isDEF;
+        boolean showRob = isDEF || isMID;
+        boolean showParadas = isGK;
+
+        if (showG) columnWidths.add(1f);
+        if (showA) columnWidths.add(1f);
+        if (showTir) columnWidths.add(1f);
+        if (showPas) columnWidths.add(1f);
+        if (showDuel) columnWidths.add(1f);
+        if (showRob) columnWidths.add(1f);
+        if (showParadas) columnWidths.add(1f);
+
+        float[] widthsArray = new float[columnWidths.size()];
+        for (int i = 0; i < columnWidths.size(); i++) {
+            widthsArray[i] = columnWidths.get(i);
+        }
+
+        Table table = new Table(UnitValue.createPercentArray(widthsArray)).useAllAvailableWidth();
         
         table.addHeaderCell(headerCell("Jugador"));
         table.addHeaderCell(headerCell("Min."));
         
-        if (isFWD || isMID || isDEF || (!isGK && !isDEF && !isMID && !isFWD)) table.addHeaderCell(headerCell("G")); else table.addHeaderCell(headerCell(""));
-        if (isFWD || isMID || (!isGK && !isDEF && !isMID && !isFWD)) table.addHeaderCell(headerCell("A")); else table.addHeaderCell(headerCell(""));
-        if (isFWD || isMID) table.addHeaderCell(headerCell("Tir (Pta)")); else table.addHeaderCell(headerCell(""));
-        if (isMID || isDEF || isGK) table.addHeaderCell(headerCell("Pas (%)")); else table.addHeaderCell(headerCell(""));
-        if (isMID || isDEF) table.addHeaderCell(headerCell("Duel (%)")); else table.addHeaderCell(headerCell(""));
-        if (isDEF || isMID) table.addHeaderCell(headerCell("Robos")); else table.addHeaderCell(headerCell(""));
-        if (isGK) table.addHeaderCell(headerCell("Paradas")); else table.addHeaderCell(headerCell(""));
+        if (showG) table.addHeaderCell(headerCell("G"));
+        if (showA) table.addHeaderCell(headerCell("A"));
+        if (showTir) table.addHeaderCell(headerCell("Tir (Pta)"));
+        if (showPas) table.addHeaderCell(headerCell("Pas (%)"));
+        if (showDuel) table.addHeaderCell(headerCell("Duel (%)"));
+        if (showRob) table.addHeaderCell(headerCell("Robos"));
+        if (showParadas) table.addHeaderCell(headerCell("Paradas"));
 
         for (PlayerAggregate agg : players) {
             table.addCell(bodyCell(agg.player.getName(), TextAlignment.LEFT));
             table.addCell(bodyCell(String.valueOf(agg.minutes), TextAlignment.CENTER));
             
-            if (isFWD || isMID || isDEF || (!isGK && !isDEF && !isMID && !isFWD)) table.addCell(bodyCell(String.valueOf(agg.goals), TextAlignment.CENTER)); else table.addCell(bodyCell("-", TextAlignment.CENTER));
-            if (isFWD || isMID || (!isGK && !isDEF && !isMID && !isFWD)) table.addCell(bodyCell(String.valueOf(agg.assists), TextAlignment.CENTER)); else table.addCell(bodyCell("-", TextAlignment.CENTER));
-            if (isFWD || isMID) table.addCell(bodyCell(formatFraction(agg.shotsOnTarget, agg.shotsTotal), TextAlignment.CENTER)); else table.addCell(bodyCell("-", TextAlignment.CENTER));
-            if (isMID || isDEF || isGK) table.addCell(bodyCell(formatFraction(agg.passesCompleted, agg.passesTotal), TextAlignment.CENTER)); else table.addCell(bodyCell("-", TextAlignment.CENTER));
-            if (isMID || isDEF) table.addCell(bodyCell(formatFraction(agg.duelsWon, agg.duelsTotal), TextAlignment.CENTER)); else table.addCell(bodyCell("-", TextAlignment.CENTER));
-            if (isDEF || isMID) table.addCell(bodyCell(String.valueOf(agg.interceptions), TextAlignment.CENTER)); else table.addCell(bodyCell("-", TextAlignment.CENTER));
-            if (isGK) table.addCell(bodyCell(String.valueOf(agg.saves), TextAlignment.CENTER)); else table.addCell(bodyCell("-", TextAlignment.CENTER));
+            if (showG) table.addCell(bodyCell(String.valueOf(agg.goals), TextAlignment.CENTER));
+            if (showA) table.addCell(bodyCell(String.valueOf(agg.assists), TextAlignment.CENTER));
+            if (showTir) table.addCell(bodyCell(formatFraction(agg.shotsOnTarget, agg.shotsTotal), TextAlignment.CENTER));
+            if (showPas) table.addCell(bodyCell(formatFraction(agg.passesCompleted, agg.passesTotal), TextAlignment.CENTER));
+            if (showDuel) table.addCell(bodyCell(formatFraction(agg.duelsWon, agg.duelsTotal), TextAlignment.CENTER));
+            if (showRob) table.addCell(bodyCell(String.valueOf(agg.interceptions), TextAlignment.CENTER));
+            if (showParadas) table.addCell(bodyCell(String.valueOf(agg.saves), TextAlignment.CENTER));
         }
 
         document.add(table);
