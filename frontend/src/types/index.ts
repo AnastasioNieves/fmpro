@@ -36,9 +36,19 @@ export interface LiveStat {
   assists: number;
   minutesPlayed: number;
   starter: boolean;
+  shotsTotal?: number;
+  shotsOnTarget?: number;
+  passesTotal?: number;
+  passesCompleted?: number;
+  duelsTotal?: number;
+  duelsWon?: number;
+  interceptions?: number;
+  saves?: number;
+  goalsConceded?: number;
 }
 
 export type MatchStatus = 'SCHEDULED' | 'FINISHED';
+export type FormationType = '4-3-3' | '4-4-2' | '3-5-2' | '4-2-3-1' | 'Personalizada';
 
 export interface MatchDetail {
   id: number;
@@ -53,6 +63,8 @@ export interface MatchDetail {
   squad: PlayerSummary[];
   lineup: PlayerSummary[];
   liveStats: LiveStat[];
+  formation?: FormationType;
+  lineupPositions?: Record<number, string>;
 }
 
 export interface Match {
@@ -84,6 +96,17 @@ export interface Statistic {
   goals: number;
   assists: number;
   minutesPlayed: number;
+  
+  // Métricas avanzadas (opcionales hasta que el backend las soporte nativamente)
+  shotsTotal?: number;
+  shotsOnTarget?: number;
+  passesTotal?: number;
+  passesCompleted?: number;
+  duelsTotal?: number;
+  duelsWon?: number;
+  interceptions?: number;
+  saves?: number;
+  goalsConceded?: number;
 }
 
 export interface Role {

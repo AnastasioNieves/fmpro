@@ -21,6 +21,8 @@ frontend/dist/
 *.log
 
 # Caches and Uploads
+# Caches and Uploads
 .gradle/
 uploads/
 .tools/
+tools/

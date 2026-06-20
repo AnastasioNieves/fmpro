@@ -7,6 +7,15 @@ public class StatisticDTO {
     private int goals;
     private int assists;
     private int minutesPlayed;
+    private int shotsTotal;
+    private int shotsOnTarget;
+    private int passesTotal;
+    private int passesCompleted;
+    private int duelsTotal;
+    private int duelsWon;
+    private int interceptions;
+    private int saves;
+    private int goalsConceded;
 
     // Constructor que acepta un objeto Statistic
     public StatisticDTO(Statistic statistic) {
@@ -18,6 +27,15 @@ public class StatisticDTO {
         this.goals = statistic.getGoals();
         this.assists = statistic.getAssists();
         this.minutesPlayed = statistic.getMinutesPlayed();
+        this.shotsTotal = statistic.getShotsTotal();
+        this.shotsOnTarget = statistic.getShotsOnTarget();
+        this.passesTotal = statistic.getPassesTotal();
+        this.passesCompleted = statistic.getPassesCompleted();
+        this.duelsTotal = statistic.getDuelsTotal();
+        this.duelsWon = statistic.getDuelsWon();
+        this.interceptions = statistic.getInterceptions();
+        this.saves = statistic.getSaves();
+        this.goalsConceded = statistic.getGoalsConceded();
     }
 
     // Getters y setters
@@ -68,4 +86,31 @@ public class StatisticDTO {
     public void setMinutesPlayed(int minutesPlayed) {
         this.minutesPlayed = minutesPlayed;
     }
+
+    public int getShotsTotal() { return shotsTotal; }
+    public void setShotsTotal(int shotsTotal) { this.shotsTotal = shotsTotal; }
+
+    public int getShotsOnTarget() { return shotsOnTarget; }
+    public void setShotsOnTarget(int shotsOnTarget) { this.shotsOnTarget = shotsOnTarget; }
+
+    public int getPassesTotal() { return passesTotal; }
+    public void setPassesTotal(int passesTotal) { this.passesTotal = passesTotal; }
+
+    public int getPassesCompleted() { return passesCompleted; }
+    public void setPassesCompleted(int passesCompleted) { this.passesCompleted = passesCompleted; }
+
+    public int getDuelsTotal() { return duelsTotal; }
+    public void setDuelsTotal(int duelsTotal) { this.duelsTotal = duelsTotal; }
+
+    public int getDuelsWon() { return duelsWon; }
+    public void setDuelsWon(int duelsWon) { this.duelsWon = duelsWon; }
+
+    public int getInterceptions() { return interceptions; }
+    public void setInterceptions(int interceptions) { this.interceptions = interceptions; }
+
+    public int getSaves() { return saves; }
+    public void setSaves(int saves) { this.saves = saves; }
+
+    public int getGoalsConceded() { return goalsConceded; }
+    public void setGoalsConceded(int goalsConceded) { this.goalsConceded = goalsConceded; }
 }

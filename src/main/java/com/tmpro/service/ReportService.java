@@ -30,6 +30,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,12 +39,13 @@ import java.util.Map;
 @SuppressWarnings("null")
 public class ReportService {
 
-    private static final DeviceRgb BRAND_BG = new DeviceRgb(6, 14, 11);
-    private static final DeviceRgb BRAND_ACCENT = new DeviceRgb(52, 211, 153);
+    // CLEAN PREMIUM STYLE
+    private static final DeviceRgb BRAND_BG = new DeviceRgb(255, 255, 255); // Fondo blanco
+    private static final DeviceRgb BRAND_ACCENT = new DeviceRgb(52, 211, 153); // Verde Neón (Cabeceras tabla)
     private static final DeviceRgb BRAND_ACCENT_DIM = new DeviceRgb(5, 150, 105);
-    private static final DeviceRgb TEXT_DARK = new DeviceRgb(15, 23, 42);
-    private static final DeviceRgb TEXT_MUTED = new DeviceRgb(71, 85, 105);
-    private static final DeviceRgb TEXT_LIGHT = new DeviceRgb(255, 255, 255);
+    private static final DeviceRgb TEXT_DARK = new DeviceRgb(15, 23, 42); // Texto principal oscuro
+    private static final DeviceRgb TEXT_MUTED = new DeviceRgb(71, 85, 105); // Texto gris
+    private static final DeviceRgb TEXT_LIGHT = new DeviceRgb(15, 23, 42); // En Clean Premium, los textos sobre fondos claros son oscuros. (Nota: cabeceras irán con texto oscuro sobre verde)
     private static final SolidBorder BORDER = new SolidBorder(new DeviceRgb(226, 232, 240), 0.8f);
 
     @Autowired
@@ -85,38 +87,37 @@ public class ReportService {
                             : "Jugador: " + player.getName() + " · " + player.getPosition() + " · Dorsal "
                                     + player.getDorsal());
 
-            int totalGoals = 0;
-            int totalAssists = 0;
-            int totalMinutes = 0;
-
-            Table table = new Table(UnitValue.createPercentArray(new float[] { 4, 1, 1, 1 }))
+            Table table = new Table(UnitValue.createPercentArray(new float[] { 3, 1, 1, 1, 1, 1, 1, 1 }))
                     .useAllAvailableWidth();
             table.addHeaderCell(headerCell("Partido"));
-            table.addHeaderCell(headerCell("Goles"));
-            table.addHeaderCell(headerCell("Asist."));
             table.addHeaderCell(headerCell("Min."));
+            table.addHeaderCell(headerCell("G"));
+            table.addHeaderCell(headerCell("A"));
+            table.addHeaderCell(headerCell("Tir (Pta)"));
+            table.addHeaderCell(headerCell("Pas. (%)"));
+            table.addHeaderCell(headerCell("Duel. (%)"));
+            table.addHeaderCell(headerCell("Rob/Par"));
 
             if (statistics.isEmpty()) {
                 table.addCell(
-                        new Cell(1, 4).add(new Paragraph("Sin registros de rendimiento.").setFontColor(TEXT_MUTED))
-                                .setBorder(BORDER).setPadding(10));
+                        new Cell(1, 8).add(new Paragraph("Sin registros de rendimiento.").setFontColor(TEXT_MUTED))
+                                .setBorder(BORDER).setPadding(10).setTextAlignment(TextAlignment.CENTER));
             } else {
                 for (Statistic stat : statistics) {
                     table.addCell(bodyCell(stat.getMatch(), TextAlignment.LEFT));
+                    table.addCell(bodyCell(String.valueOf(stat.getMinutesPlayed()), TextAlignment.CENTER));
                     table.addCell(bodyCell(String.valueOf(stat.getGoals()), TextAlignment.CENTER));
                     table.addCell(bodyCell(String.valueOf(stat.getAssists()), TextAlignment.CENTER));
-                    table.addCell(bodyCell(String.valueOf(stat.getMinutesPlayed()), TextAlignment.CENTER));
-                    totalGoals += stat.getGoals();
-                    totalAssists += stat.getAssists();
-                    totalMinutes += stat.getMinutesPlayed();
+                    table.addCell(bodyCell(formatFraction(stat.getShotsOnTarget(), stat.getShotsTotal()), TextAlignment.CENTER));
+                    table.addCell(bodyCell(formatFraction(stat.getPassesCompleted(), stat.getPassesTotal()), TextAlignment.CENTER));
+                    table.addCell(bodyCell(formatFraction(stat.getDuelsWon(), stat.getDuelsTotal()), TextAlignment.CENTER));
+                    String defStats = stat.getInterceptions() > 0 ? String.valueOf(stat.getInterceptions()) : (stat.getSaves() > 0 ? String.valueOf(stat.getSaves()) : "-");
+                    table.addCell(bodyCell(defStats, TextAlignment.CENTER));
                 }
             }
 
             document.add(sectionTitle("Detalle por partido"));
             document.add(table);
-            document.add(summaryLine(String.format(
-                    "Totales: %d goles · %d asistencias · %d minutos",
-                    totalGoals, totalAssists, totalMinutes)));
             document.add(footerLine());
             document.close();
         } catch (Exception e) {
@@ -145,6 +146,14 @@ public class ReportService {
             agg.assists += stat.getAssists();
             agg.minutes += stat.getMinutesPlayed();
             agg.matches++;
+            agg.shotsOnTarget += stat.getShotsOnTarget();
+            agg.shotsTotal += stat.getShotsTotal();
+            agg.passesCompleted += stat.getPassesCompleted();
+            agg.passesTotal += stat.getPassesTotal();
+            agg.duelsWon += stat.getDuelsWon();
+            agg.duelsTotal += stat.getDuelsTotal();
+            agg.interceptions += stat.getInterceptions();
+            agg.saves += stat.getSaves();
         }
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -161,44 +170,41 @@ public class ReportService {
                     "Equipo: " + team.getName() + " · Entrenador: "
                             + (team.getCoach() != null ? team.getCoach() : "—"));
 
-            Table table = new Table(UnitValue.createPercentArray(new float[] { 3, 2, 1, 1, 1, 1 }))
-                    .useAllAvailableWidth();
-            table.addHeaderCell(headerCell("Jugador"));
-            table.addHeaderCell(headerCell("Posición"));
-            table.addHeaderCell(headerCell("Part."));
-            table.addHeaderCell(headerCell("Goles"));
-            table.addHeaderCell(headerCell("Asist."));
-            table.addHeaderCell(headerCell("Min."));
-
-            document.add(sectionTitle("Resumen por jugador"));
+            document.add(sectionTitle("Análisis de Rendimiento por Posiciones"));
 
             if (aggregates.isEmpty()) {
+                Table table = new Table(1).useAllAvailableWidth();
                 table.addCell(
-                        new Cell(1, 6).add(new Paragraph("Sin estadísticas para este equipo.").setFontColor(TEXT_MUTED))
+                        new Cell().add(new Paragraph("Sin estadísticas para este equipo.").setFontColor(TEXT_MUTED))
                                 .setBorder(BORDER).setPadding(10));
                 document.add(table);
             } else {
-                int teamGoals = 0;
-                int teamAssists = 0;
-                int teamMinutes = 0;
+                
+                // Agrupación por posiciones
+                List<PlayerAggregate> porteros = new ArrayList<>();
+                List<PlayerAggregate> defensas = new ArrayList<>();
+                List<PlayerAggregate> medios = new ArrayList<>();
+                List<PlayerAggregate> delanteros = new ArrayList<>();
+                List<PlayerAggregate> otros = new ArrayList<>();
+
                 for (PlayerAggregate agg : aggregates.values()) {
-                    table.addCell(bodyCell(agg.player.getName(), TextAlignment.LEFT));
-                    table.addCell(bodyCell(agg.player.getPosition(), TextAlignment.LEFT));
-                    table.addCell(bodyCell(String.valueOf(agg.matches), TextAlignment.CENTER));
-                    table.addCell(bodyCell(String.valueOf(agg.goals), TextAlignment.CENTER));
-                    table.addCell(bodyCell(String.valueOf(agg.assists), TextAlignment.CENTER));
-                    table.addCell(bodyCell(String.valueOf(agg.minutes), TextAlignment.CENTER));
-                    teamGoals += agg.goals;
-                    teamAssists += agg.assists;
-                    teamMinutes += agg.minutes;
+                    String pos = agg.player.getPosition() != null ? agg.player.getPosition().toLowerCase() : "";
+                    if (pos.contains("por")) porteros.add(agg);
+                    else if (pos.contains("med") || pos.contains("centro") || pos.contains("piv") || pos.contains("int") || pos.contains("mco") || pos.contains("mp")) medios.add(agg);
+                    else if (pos.contains("def") || pos.contains("lat") || pos.contains("central") || pos.equals("df") || pos.equals("ct") || pos.equals("cb")) defensas.add(agg);
+                    else if (pos.contains("del") || pos.contains("ext") || pos.contains("pun") || pos.contains("dc")) delanteros.add(agg);
+                    else otros.add(agg);
                 }
-                document.add(table);
-                document.add(summaryLine(String.format(
-                        "Totales del equipo: %d goles · %d asistencias · %d minutos",
-                        teamGoals, teamAssists, teamMinutes)));
-                document.add(footerLine());
+
+                addCategoryTable(document, "Porteros", porteros, true, false, false, false);
+                addCategoryTable(document, "Defensas", defensas, false, true, false, false);
+                addCategoryTable(document, "Centrocampistas", medios, false, false, true, false);
+                addCategoryTable(document, "Delanteros", delanteros, false, false, false, true);
+                addCategoryTable(document, "Otros", otros, false, false, false, false);
+
             }
 
+            document.add(footerLine());
             document.close();
         } catch (Exception e) {
             throw new RuntimeException("Error al generar el informe", e);
@@ -207,35 +213,79 @@ public class ReportService {
         return outputStream.toByteArray();
     }
 
+    private void addCategoryTable(Document document, String title, List<PlayerAggregate> players, boolean isGK, boolean isDEF, boolean isMID, boolean isFWD) {
+        if (players.isEmpty()) return;
 
+        document.add(new Paragraph(title)
+                .setFontSize(14)
+                .setBold()
+                .setFontColor(TEXT_DARK)
+                .setMarginTop(16)
+                .setMarginBottom(6));
+
+        Table table = new Table(UnitValue.createPercentArray(new float[] { 3, 1, 1, 1, 1, 1, 1, 1, 1 }))
+                .useAllAvailableWidth();
+        
+        table.addHeaderCell(headerCell("Jugador"));
+        table.addHeaderCell(headerCell("Min."));
+        
+        if (isFWD || isMID || isDEF || (!isGK && !isDEF && !isMID && !isFWD)) table.addHeaderCell(headerCell("G")); else table.addHeaderCell(headerCell(""));
+        if (isFWD || isMID || (!isGK && !isDEF && !isMID && !isFWD)) table.addHeaderCell(headerCell("A")); else table.addHeaderCell(headerCell(""));
+        if (isFWD || isMID) table.addHeaderCell(headerCell("Tir (Pta)")); else table.addHeaderCell(headerCell(""));
+        if (isMID || isDEF || isGK) table.addHeaderCell(headerCell("Pas (%)")); else table.addHeaderCell(headerCell(""));
+        if (isMID || isDEF) table.addHeaderCell(headerCell("Duel (%)")); else table.addHeaderCell(headerCell(""));
+        if (isDEF || isMID) table.addHeaderCell(headerCell("Robos")); else table.addHeaderCell(headerCell(""));
+        if (isGK) table.addHeaderCell(headerCell("Paradas")); else table.addHeaderCell(headerCell(""));
+
+        for (PlayerAggregate agg : players) {
+            table.addCell(bodyCell(agg.player.getName(), TextAlignment.LEFT));
+            table.addCell(bodyCell(String.valueOf(agg.minutes), TextAlignment.CENTER));
+            
+            if (isFWD || isMID || isDEF || (!isGK && !isDEF && !isMID && !isFWD)) table.addCell(bodyCell(String.valueOf(agg.goals), TextAlignment.CENTER)); else table.addCell(bodyCell("-", TextAlignment.CENTER));
+            if (isFWD || isMID || (!isGK && !isDEF && !isMID && !isFWD)) table.addCell(bodyCell(String.valueOf(agg.assists), TextAlignment.CENTER)); else table.addCell(bodyCell("-", TextAlignment.CENTER));
+            if (isFWD || isMID) table.addCell(bodyCell(formatFraction(agg.shotsOnTarget, agg.shotsTotal), TextAlignment.CENTER)); else table.addCell(bodyCell("-", TextAlignment.CENTER));
+            if (isMID || isDEF || isGK) table.addCell(bodyCell(formatFraction(agg.passesCompleted, agg.passesTotal), TextAlignment.CENTER)); else table.addCell(bodyCell("-", TextAlignment.CENTER));
+            if (isMID || isDEF) table.addCell(bodyCell(formatFraction(agg.duelsWon, agg.duelsTotal), TextAlignment.CENTER)); else table.addCell(bodyCell("-", TextAlignment.CENTER));
+            if (isDEF || isMID) table.addCell(bodyCell(String.valueOf(agg.interceptions), TextAlignment.CENTER)); else table.addCell(bodyCell("-", TextAlignment.CENTER));
+            if (isGK) table.addCell(bodyCell(String.valueOf(agg.saves), TextAlignment.CENTER)); else table.addCell(bodyCell("-", TextAlignment.CENTER));
+        }
+
+        document.add(table);
+    }
+
+    private static String formatFraction(int part, int total) {
+        if (total == 0) return "-";
+        int percent = Math.round(((float) part / total) * 100);
+        return String.format("%d/%d (%d%%)", part, total, percent);
+    }
 
     private static Cell headerCell(String text) {
         return new Cell()
                 .add(new Paragraph(text)
                         .setBold()
-                        .setFontSize(10)
-                        .setFontColor(TEXT_LIGHT))
+                        .setFontSize(9)
+                        .setFontColor(new DeviceRgb(0, 0, 0))) // Negro puro sobre el verde para Clean Premium
                 .setBackgroundColor(BRAND_ACCENT)
-                .setPadding(8)
-                .setBorder(Border.NO_BORDER)
+                .setPadding(6)
+                .setBorder(new SolidBorder(new DeviceRgb(200, 220, 200), 0.5f))
                 .setTextAlignment(TextAlignment.CENTER);
     }
 
     private static Cell bodyCell(String text, TextAlignment alignment) {
         return new Cell()
                 .add(new Paragraph(text)
-                        .setFontSize(10)
+                        .setFontSize(9)
                         .setFontColor(TEXT_DARK))
-                .setPadding(8)
+                .setPadding(6)
                 .setBorder(new SolidBorder(new DeviceRgb(230, 230, 230), 0.5f))
                 .setTextAlignment(alignment);
     }
 
     private static Paragraph sectionTitle(String text) {
         return new Paragraph(text)
-                .setFontSize(11)
+                .setFontSize(16)
                 .setBold()
-                .setFontColor(BRAND_ACCENT_DIM)
+                .setFontColor(TEXT_DARK)
                 .setMarginTop(14)
                 .setMarginBottom(8);
     }
@@ -287,15 +337,15 @@ public class ReportService {
 
         textCell.add(
                 new Paragraph(title)
-                        .setFontSize(18)
+                        .setFontSize(22)
                         .setBold()
-                        .setFontColor(TEXT_LIGHT)
+                        .setFontColor(TEXT_DARK)
                         .setMargin(0));
 
         textCell.add(
                 new Paragraph(subtitle)
-                        .setFontSize(10)
-                        .setFontColor(new DeviceRgb(180, 200, 200))
+                        .setFontSize(11)
+                        .setFontColor(TEXT_MUTED)
                         .setMarginTop(4));
 
         header.addCell(logoCell);
@@ -305,7 +355,7 @@ public class ReportService {
     }
 
     private Image loadBrandLogo() {
-        try (InputStream is = ReportService.class.getResourceAsStream("C:\\Users\\tasio\\Desktop\\fmpro-main\\frontend\\public\\logo-primary.webp")) {
+        try (InputStream is = ReportService.class.getResourceAsStream("/logo-primary.webp")) {
             if (is == null) {
                 return null;
             }
@@ -323,10 +373,17 @@ public class ReportService {
         private int assists;
         private int minutes;
         private int matches;
+        private int shotsOnTarget;
+        private int shotsTotal;
+        private int passesCompleted;
+        private int passesTotal;
+        private int duelsWon;
+        private int duelsTotal;
+        private int interceptions;
+        private int saves;
 
         private PlayerAggregate(Player player) {
             this.player = player;
         }
     }
 }
-

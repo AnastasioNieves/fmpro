@@ -45,65 +45,55 @@ export function Layout() {
   }, [location.pathname]);
 
   return (
-    <div className="app-shell">
-      <aside className="sidebar sidebar--desktop" aria-label="Navegación principal">
-        <div className="sidebar__brand">
-          <div className="sidebar__logo" aria-hidden>
+    <div className="app-shell app-shell--top">
+      <header className="top-nav top-nav--desktop" aria-label="Navegación principal">
+        <div className="top-nav__brand">
+          <div className="top-nav__logo" aria-hidden>
             <img className="app-logo__img" src={logoUrl} alt="" />
           </div>
-          <div>
-            <strong>FMPRO</strong>
-            <span>Football Manager</span>
-          </div>
+          <strong>FMPRO</strong>
         </div>
 
-        <nav className="sidebar__nav">
+        <nav className="top-nav__links">
           {nav.map(({ to, label, icon: Icon, end }) => (
             <NavLink
               key={to}
               to={to}
               end={end}
               className={({ isActive }) =>
-                `sidebar__link${isActive ? ' sidebar__link--active' : ''}`
+                `top-nav__link${isActive ? ' top-nav__link--active' : ''}`
               }
             >
               <Icon size={18} />
-              {label}
+              <span>{label}</span>
             </NavLink>
           ))}
         </nav>
 
-        <div className="sidebar__footer">
+        <div className="top-nav__user">
           {user && (
             <>
-              <div className="sidebar__user">
-                <span className="sidebar__avatar">{user.username[0]?.toUpperCase()}</span>
-                <div>
-                  <strong>{user.username}</strong>
-                  <span>{user.roleName}</span>
-                </div>
-              </div>
               <button
                 type="button"
-                className="sidebar__theme"
+                className="top-nav__action"
                 onClick={toggleTheme}
                 aria-label={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
               >
-                {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-                {theme === 'dark' ? 'Claro' : 'Oscuro'}
+                {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
               </button>
+              <div className="top-nav__avatar" title={user.username}>{user.username[0]?.toUpperCase()}</div>
               <button
                 type="button"
-                className="sidebar__logout"
+                className="top-nav__action top-nav__action--danger"
                 onClick={() => void logout()}
+                title="Cerrar sesión"
               >
-                <LogOut size={16} />
-                Salir
+                <LogOut size={18} />
               </button>
             </>
           )}
         </div>
-      </aside>
+      </header>
 
       <div className="app-body">
         <main className="main">
