@@ -24,17 +24,29 @@ public class Statistic {
 
     private String match = "";
 
+    @Column(columnDefinition = "integer default 0 not null")
     private int goals = 0;
+    @Column(columnDefinition = "integer default 0 not null")
     private int assists = 0;
+    @Column(columnDefinition = "integer default 0 not null")
     private int minutesPlayed = 0;
+    @Column(columnDefinition = "integer default 0 not null")
     private int shotsTotal = 0;
+    @Column(columnDefinition = "integer default 0 not null")
     private int shotsOnTarget = 0;
+    @Column(columnDefinition = "integer default 0 not null")
     private int passesTotal = 0;
+    @Column(columnDefinition = "integer default 0 not null")
     private int passesCompleted = 0;
+    @Column(columnDefinition = "integer default 0 not null")
     private int duelsTotal = 0;
+    @Column(columnDefinition = "integer default 0 not null")
     private int duelsWon = 0;
+    @Column(columnDefinition = "integer default 0 not null")
     private int interceptions = 0;
+    @Column(columnDefinition = "integer default 0 not null")
     private int saves = 0;
+    @Column(columnDefinition = "integer default 0 not null")
     private int goalsConceded = 0;
 
     public Statistic() {
