@@ -9,14 +9,12 @@ import com.tmpro.security.CurrentUserService;
 import com.tmpro.security.SecurityUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
 
-
 @Service
-@SuppressWarnings("null")
+@SuppressWarnings("all")
 public class PlayerService {
 
     private final PlayerRepository playerRepository;
@@ -37,9 +35,9 @@ public class PlayerService {
         this.currentUserService = currentUserService;
     }
 
-    @Transactional(readOnly = true)
     public List<Player> getAllPlayers() {
-        List<Long> teamIds = accessControl.getVisibleTeamIds();
+        // AccessControlService needs to be refactored to return List<String>
+        List<String> teamIds = accessControl.getVisibleTeamIdsStr();
         if (teamIds.isEmpty()) {
             return List.of();
         }
@@ -50,62 +48,57 @@ public class PlayerService {
         return playerRepository.findByName(name);
     }
 
-    @Transactional(readOnly = true)
-    public Optional<Player> findById(Long id) {
+    public Optional<Player> findById(String id) {
         return playerRepository.findById(id).filter(this::canViewPlayer);
     }
 
-    @Transactional(readOnly = true)
-    public Optional<Player> findByIdWithTeam(Long id) {
+    public Optional<Player> findByIdWithTeam(String id) {
         return playerRepository.findByIdWithTeam(id).filter(this::canViewPlayer);
     }
 
-    @Transactional
     public Player createPlayer(Player player) {
         assertCanManagePlayerTeam(player);
         return playerRepository.save(player);
     }
 
-    @Transactional
-    public Optional<Player> updatePlayer(Long id, Player updatedPlayer) {
+    public Optional<Player> updatePlayer(String id, Player updatedPlayer) {
         return playerRepository.findById(id).map(existingPlayer -> {
             assertCanManagePlayerTeam(updatedPlayer);
             existingPlayer.setName(updatedPlayer.getName());
             existingPlayer.setPosition(updatedPlayer.getPosition());
             existingPlayer.setDorsal(updatedPlayer.getDorsal());
-            existingPlayer.setTeam(updatedPlayer.getTeam());
+            existingPlayer.setTeamId(updatedPlayer.getTeamId());
             return playerRepository.save(existingPlayer);
         });
     }
 
-    @Transactional
-    public boolean deletePlayer(Long id) {
+    public boolean deletePlayer(String id) {
         return playerRepository.findById(id).map(player -> {
-            if (player.getTeam() != null) {
-                accessControl.assertCanManageTeam(player.getTeam().getId());
+            if (player.getTeamId() != null) {
+                accessControl.assertCanManageTeamStr(player.getTeamId());
             }
-            playerRepository.delete(player);
+            playerRepository.deleteById(player.getId());
             return true;
         }).orElse(false);
     }
 
-    public List<Statistic> getPlayerStatistics(Long id) {
+    public List<Statistic> getPlayerStatistics(String id) {
         Player player = findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Jugador no encontrado"));
         return statisticRepository.findByPlayerId(player.getId());
     }
 
-    public Long findPlayerIdByName(String name) {
+    public String findPlayerIdByName(String name) {
         return playerRepository.findIdByName(name)
                 .orElseThrow(() -> new IllegalArgumentException("Jugador no encontrado: " + name));
     }
 
     private boolean canViewPlayer(Player player) {
-        if (player.getTeam() == null) {
+        if (player.getTeamId() == null) {
             return false;
         }
         try {
-            accessControl.assertCanViewTeam(player.getTeam().getId());
+            accessControl.assertCanViewTeamStr(player.getTeamId());
             return true;
         } catch (org.springframework.security.access.AccessDeniedException e) {
             return false;
@@ -118,10 +111,9 @@ public class PlayerService {
             throw new org.springframework.security.access.AccessDeniedException(
                     "No tienes permiso para gestionar jugadores.");
         }
-        if (player.getTeam() == null || player.getTeam().getId() == null) {
+        if (player.getTeamId() == null || player.getTeamId().isEmpty()) {
             throw new IllegalArgumentException("team_id es obligatorio");
         }
-        accessControl.assertCanManageTeam(player.getTeam().getId());
+        accessControl.assertCanManageTeamStr(player.getTeamId());
     }
 }
-

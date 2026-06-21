@@ -2,17 +2,18 @@ package com.tmpro.model.dto;
 
 import com.tmpro.model.Match;
 import com.tmpro.model.MatchStatus;
+import com.tmpro.model.Player;
 
-import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class MatchDetailDTO {
 
-    private Long id;
-    private LocalDateTime date;
+    private String id;
+    private Date date;
     private String location;
-    private Long teamId;
+    private String teamId;
     private String opponentName;
     private MatchStatus status;
     private boolean home;
@@ -25,7 +26,7 @@ public class MatchDetailDTO {
     public MatchDetailDTO() {
     }
 
-    public MatchDetailDTO(Match match, List<LiveStatDTO> liveStats) {
+    public MatchDetailDTO(Match match, List<LiveStatDTO> liveStats, List<Player> squadPlayers, List<Player> lineupPlayers) {
         this.id = match.getId();
         this.date = match.getDate();
         this.location = match.getLocation();
@@ -35,24 +36,24 @@ public class MatchDetailDTO {
         this.home = match.isHome();
         this.teamScore = match.getTeamScore();
         this.opponentScore = match.getOpponentScore();
-        this.squad = match.getSquad().stream().map(PlayerSummaryDTO::new).collect(Collectors.toList());
-        this.lineup = match.getLineup().stream().map(PlayerSummaryDTO::new).collect(Collectors.toList());
+        this.squad = squadPlayers.stream().map(PlayerSummaryDTO::new).collect(Collectors.toList());
+        this.lineup = lineupPlayers.stream().map(PlayerSummaryDTO::new).collect(Collectors.toList());
         this.liveStats = liveStats;
     }
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 
-    public LocalDateTime getDate() {
+    public Date getDate() {
         return date;
     }
 
-    public void setDate(LocalDateTime date) {
+    public void setDate(Date date) {
         this.date = date;
     }
 
@@ -64,11 +65,11 @@ public class MatchDetailDTO {
         this.location = location;
     }
 
-    public Long getTeamId() {
+    public String getTeamId() {
         return teamId;
     }
 
-    public void setTeamId(Long teamId) {
+    public void setTeamId(String teamId) {
         this.teamId = teamId;
     }
 

@@ -24,7 +24,6 @@ import com.tmpro.repository.TeamRepository;
 import com.tmpro.security.AccessControlService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -36,7 +35,7 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-@SuppressWarnings("null")
+@SuppressWarnings("all")
 public class ReportService {
 
     // CLEAN PREMIUM STYLE
@@ -58,12 +57,13 @@ public class ReportService {
     @Autowired
     private AccessControlService accessControl;
 
-    @Transactional(readOnly = true)
-    public byte[] generatePlayerReport(Long playerId) {
+    public byte[] generatePlayerReport(String playerId) {
         Player player = playerService.findByIdWithTeam(playerId)
                 .orElseThrow(() -> new IllegalArgumentException("Jugador no encontrado"));
-        if (player.getTeam() != null) {
-            accessControl.assertCanViewTeam(player.getTeam().getId());
+        Team team = null;
+        if (player.getTeamId() != null) {
+            accessControl.assertCanViewTeamStr(player.getTeamId());
+            team = teamRepository.findById(player.getTeamId()).orElse(null);
         }
 
         List<Statistic> statistics = statisticRepository.findByPlayerIdWithPlayer(player.getId());
@@ -79,9 +79,9 @@ public class ReportService {
             addBrandHeader(
                     document,
                     "Informe de jugador",
-                    player.getTeam() != null
+                    team != null
                             ? "Jugador: " + player.getName() + " · " + player.getPosition() + " · Dorsal "
-                                    + player.getDorsal() + " · " + player.getTeam().getName()
+                                    + player.getDorsal() + " · " + team.getName()
                             : "Jugador: " + player.getName() + " · " + player.getPosition() + " · Dorsal "
                                     + player.getDorsal());
 
@@ -125,21 +125,32 @@ public class ReportService {
         return outputStream.toByteArray();
     }
 
-    @Transactional(readOnly = true)
-    public byte[] generateTeamReport(Long teamId) {
-        accessControl.assertCanViewTeam(teamId);
+    public byte[] generateTeamReport(String teamId) {
+        accessControl.assertCanViewTeamStr(teamId);
         Team team = teamRepository.findById(teamId)
                 .orElseThrow(() -> new IllegalArgumentException("Equipo no encontrado"));
 
         List<Statistic> statistics = statisticRepository.findByTeamIdWithPlayer(teamId);
-        Map<Long, PlayerAggregate> aggregates = new LinkedHashMap<>();
+        // Implementación de fallback: en Firestore findByTeamIdWithPlayer no trae todas, 
+        // así que buscamos los jugadores primero y luego sus estadísticas
+        if (statistics.isEmpty()) {
+            List<Player> teamPlayers = playerService.getAllPlayers().stream().filter(p -> teamId.equals(p.getTeamId())).toList();
+            for (Player p : teamPlayers) {
+                statistics.addAll(statisticRepository.findByPlayerId(p.getId()));
+            }
+        }
+
+        Map<String, PlayerAggregate> aggregates = new LinkedHashMap<>();
 
         for (Statistic stat : statistics) {
-            if (stat.getPlayer() == null) {
+            if (stat.getPlayerId() == null) {
                 continue;
             }
-            Long playerId = stat.getPlayer().getId();
-            PlayerAggregate agg = aggregates.computeIfAbsent(playerId, id -> new PlayerAggregate(stat.getPlayer()));
+            String playerId = stat.getPlayerId();
+            Player player = playerService.findById(playerId).orElse(null);
+            if (player == null) continue;
+            
+            PlayerAggregate agg = aggregates.computeIfAbsent(playerId, id -> new PlayerAggregate(player));
             agg.goals += stat.getGoals();
             agg.assists += stat.getAssists();
             agg.minutes += stat.getMinutesPlayed();
@@ -177,7 +188,6 @@ public class ReportService {
                 document.add(table);
             } else {
                 
-                // Agrupación por posiciones
                 List<PlayerAggregate> porteros = new ArrayList<>();
                 List<PlayerAggregate> defensas = new ArrayList<>();
                 List<PlayerAggregate> medios = new ArrayList<>();
@@ -220,10 +230,9 @@ public class ReportService {
                 .setMarginTop(16)
                 .setMarginBottom(6));
 
-        // Calcular número de columnas y sus pesos (ancho)
         List<Float> columnWidths = new ArrayList<>();
-        columnWidths.add(3f); // Jugador
-        columnWidths.add(1f); // Minutos
+        columnWidths.add(3f); 
+        columnWidths.add(1f); 
         
         boolean showG = isFWD || isMID || isDEF || (!isGK && !isDEF && !isMID && !isFWD);
         boolean showA = isFWD || isMID || (!isGK && !isDEF && !isMID && !isFWD);
@@ -286,7 +295,7 @@ public class ReportService {
                 .add(new Paragraph(text)
                         .setBold()
                         .setFontSize(9)
-                        .setFontColor(new DeviceRgb(0, 0, 0))) // Negro puro sobre el verde para Clean Premium
+                        .setFontColor(new DeviceRgb(0, 0, 0))) 
                 .setBackgroundColor(BRAND_ACCENT)
                 .setPadding(6)
                 .setBorder(new SolidBorder(new DeviceRgb(200, 220, 200), 0.5f))
@@ -330,7 +339,6 @@ public class ReportService {
                 .setPadding(12)
                 .setMarginBottom(20);
 
-        // LOGO
         Cell logoCell = new Cell()
                 .setBorder(Border.NO_BORDER)
                 .setVerticalAlignment(VerticalAlignment.MIDDLE)
@@ -342,7 +350,6 @@ public class ReportService {
             logoCell.add(logo);
         }
 
-        // TEXTO
         Cell textCell = new Cell()
                 .setBorder(Border.NO_BORDER)
                 .setBackgroundColor(BRAND_BG)

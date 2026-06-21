@@ -1,32 +1,27 @@
 package com.tmpro.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import jakarta.persistence.*;
 import java.util.List;
+import java.util.ArrayList;
 
-@Entity
-@Table(name = "teams")
 public class Team {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
+    private String id;
     private String name;
     private String coach;
+    private String ownerUserId;
 
-    @Column(name = "owner_user_id")
-    private Long ownerUserId;
-
-    @OneToMany(mappedBy = "team", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    // En Firestore, podríamos optar por no anidar jugadores si la colección "players" tiene un campo "teamId"
+    // Sin embargo, para mantener el contrato con el frontend, podemos dejar la lista transitoria
+    // o rellenarla en el servicio cuando sea necesario.
     @JsonIgnore
-    private List<Player> players;
+    private List<Player> players = new ArrayList<>();
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 
@@ -46,11 +41,11 @@ public class Team {
         this.coach = coach;
     }
 
-    public Long getOwnerUserId() {
+    public String getOwnerUserId() {
         return ownerUserId;
     }
 
-    public void setOwnerUserId(Long ownerUserId) {
+    public void setOwnerUserId(String ownerUserId) {
         this.ownerUserId = ownerUserId;
     }
 

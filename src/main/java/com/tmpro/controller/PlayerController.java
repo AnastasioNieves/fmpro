@@ -2,7 +2,6 @@ package com.tmpro.controller;
 
 import com.tmpro.model.Player;
 import com.tmpro.model.PlayerDTO;
-import com.tmpro.model.Team;
 import com.tmpro.service.PlayerPhotoService;
 import com.tmpro.service.PlayerService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +11,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
+
 @RestController
 @RequestMapping("/api/players")
 public class PlayerController {
@@ -38,7 +38,7 @@ public class PlayerController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletePlayer(@PathVariable Long id) {
+    public ResponseEntity<Void> deletePlayer(@PathVariable String id) {
         if (playerService.deletePlayer(id)) {
             return ResponseEntity.noContent().build();
         }
@@ -46,7 +46,7 @@ public class PlayerController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<PlayerDTO> updatePlayer(@PathVariable Long id, @RequestBody PlayerDTO playerDTO) {
+    public ResponseEntity<PlayerDTO> updatePlayer(@PathVariable String id, @RequestBody PlayerDTO playerDTO) {
         return playerService.updatePlayer(id, toEntity(playerDTO))
                 .map(player -> ResponseEntity.ok(toDto(player)))
                 .orElseGet(() -> ResponseEntity.notFound().build());
@@ -54,7 +54,7 @@ public class PlayerController {
 
     @PostMapping("/{id}/photo")
     public ResponseEntity<PlayerDTO> uploadPhoto(
-            @PathVariable Long id,
+            @PathVariable String id,
             @RequestParam("file") MultipartFile file
     ) {
         String photoUrl = playerPhotoService.savePhoto(id, file);
@@ -77,9 +77,7 @@ public class PlayerController {
             throw new IllegalArgumentException("team_id es obligatorio");
         }
 
-        Team team = new Team();
-        team.setId(Long.parseLong(dto.getTeam_id().trim()));
-        player.setTeam(team);
+        player.setTeamId(dto.getTeam_id().trim());
         return player;
     }
 
@@ -89,8 +87,8 @@ public class PlayerController {
         dto.setName(player.getName());
         dto.setDorsal(player.getDorsal());
         dto.setPosition(player.getPosition());
-        if (player.getTeam() != null) {
-            dto.setTeam_id(String.valueOf(player.getTeam().getId()));
+        if (player.getTeamId() != null) {
+            dto.setTeam_id(player.getTeamId());
         }
         dto.setPhotoUrl(player.getPhotoUrl());
         return dto;

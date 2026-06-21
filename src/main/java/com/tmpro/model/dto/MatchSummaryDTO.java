@@ -3,14 +3,14 @@ package com.tmpro.model.dto;
 import com.tmpro.model.Match;
 import com.tmpro.model.MatchStatus;
 
-import java.time.LocalDateTime;
+import java.util.Date;
 
 public class MatchSummaryDTO {
 
-    private Long id;
-    private LocalDateTime date;
+    private String id;
+    private Date date;
     private String location;
-    private Long teamId;
+    private String teamId;
     private String opponentName;
     private MatchStatus status;
     private boolean home;
@@ -38,19 +38,19 @@ public class MatchSummaryDTO {
         return dto;
     }
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 
-    public LocalDateTime getDate() {
+    public Date getDate() {
         return date;
     }
 
-    public void setDate(LocalDateTime date) {
+    public void setDate(Date date) {
         this.date = date;
     }
 
@@ -62,11 +62,11 @@ public class MatchSummaryDTO {
         this.location = location;
     }
 
-    public Long getTeamId() {
+    public String getTeamId() {
         return teamId;
     }
 
-    public void setTeamId(Long teamId) {
+    public void setTeamId(String teamId) {
         this.teamId = teamId;
     }
 

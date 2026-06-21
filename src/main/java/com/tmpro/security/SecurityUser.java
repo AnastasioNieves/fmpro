@@ -10,13 +10,13 @@ import java.util.List;
 
 public class SecurityUser implements UserDetails {
 
-    private final Long id;
+    private final String id;
     private final String username;
     private final String password;
     private final String roleName;
-    private final Long teamId;
+    private final String teamId;
 
-    public SecurityUser(User user, String roleName, Long teamId) {
+    public SecurityUser(User user, String roleName, String teamId) {
         this.id = user.getId();
         this.username = user.getUsername();
         this.password = user.getPassword();
@@ -24,7 +24,7 @@ public class SecurityUser implements UserDetails {
         this.teamId = teamId;
     }
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
@@ -32,7 +32,7 @@ public class SecurityUser implements UserDetails {
         return roleName;
     }
 
-    public Long getTeamId() {
+    public String getTeamId() {
         return teamId;
     }
 

@@ -1,26 +1,26 @@
 package com.tmpro.model;
 
 public class UserResponse {
-    private Long id;
+    private String id;
     private String username;
-    private Long roleId;
+    private String roleId;
     private String roleName;
 
     public UserResponse() {
     }
 
-    public UserResponse(Long id, String username, Long roleId, String roleName) {
+    public UserResponse(String id, String username, String roleId, String roleName) {
         this.id = id;
         this.username = username;
         this.roleId = roleId;
         this.roleName = roleName;
     }
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 
@@ -32,11 +32,11 @@ public class UserResponse {
         this.username = username;
     }
 
-    public Long getRoleId() {
+    public String getRoleId() {
         return roleId;
     }
 
-    public void setRoleId(Long roleId) {
+    public void setRoleId(String roleId) {
         this.roleId = roleId;
     }
 

@@ -27,7 +27,7 @@ public class MatchController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<MatchDetailDTO> getMatch(@PathVariable Long id) {
+    public ResponseEntity<MatchDetailDTO> getMatch(@PathVariable String id) {
         return ResponseEntity.ok(matchService.getMatchDetail(id));
     }
 
@@ -38,7 +38,7 @@ public class MatchController {
 
     @PutMapping("/{id}/squad")
     public ResponseEntity<MatchDetailDTO> updateSquad(
-            @PathVariable Long id,
+            @PathVariable String id,
             @RequestBody PlayerIdsRequest request
     ) {
         return ResponseEntity.ok(matchService.updateSquad(id, request.getPlayerIds()));
@@ -46,7 +46,7 @@ public class MatchController {
 
     @PutMapping("/{id}/lineup")
     public ResponseEntity<MatchDetailDTO> updateLineup(
-            @PathVariable Long id,
+            @PathVariable String id,
             @RequestBody PlayerIdsRequest request
     ) {
         return ResponseEntity.ok(matchService.updateLineup(id, request.getPlayerIds()));
@@ -54,7 +54,7 @@ public class MatchController {
 
     @PutMapping("/{id}/live-stats")
     public ResponseEntity<List<LiveStatDTO>> updateLiveStats(
-            @PathVariable Long id,
+            @PathVariable String id,
             @RequestBody LiveStatsUpdateRequest request
     ) {
         return ResponseEntity.ok(matchService.updateLiveStats(id, request.getStats()));
@@ -62,19 +62,19 @@ public class MatchController {
 
     @PutMapping("/{id}/score")
     public ResponseEntity<MatchDetailDTO> updateScore(
-            @PathVariable Long id,
+            @PathVariable String id,
             @RequestBody MatchScoreUpdateRequest request
     ) {
         return ResponseEntity.ok(matchService.updateScore(id, request));
     }
 
     @PutMapping("/{id}/close")
-    public ResponseEntity<MatchDetailDTO> closeMatch(@PathVariable Long id) {
+    public ResponseEntity<MatchDetailDTO> closeMatch(@PathVariable String id) {
         return ResponseEntity.ok(matchService.closeMatch(id));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteMatch(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteMatch(@PathVariable String id) {
         matchService.deleteMatch(id);
         return ResponseEntity.noContent().build();
     }

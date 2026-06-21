@@ -21,11 +21,12 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 @Configuration
 public class DataInitializer {
@@ -48,35 +49,37 @@ public class DataInitializer {
     ) {
         return args -> {
             Role adminRole = ensureRole(roleRepository, "ADMIN");
-            ensureRole(roleRepository, "USER");
-            ensureRole(roleRepository, "TRAINER");
+            Role userRole = ensureRole(roleRepository, "USER");
+            Role trainerRole = ensureRole(roleRepository, "TRAINER");
 
-            User admin = userRepository.findByUsernameIgnoreCase(ADMIN_USERNAME)
+            User admin = userRepository.findById("yknU8JhLqMRCOATldGyJTAlpTkF3")
                     .orElseGet(() -> {
                         User created = new User();
+                        created.setId("yknU8JhLqMRCOATldGyJTAlpTkF3");
                         created.setUsername(ADMIN_USERNAME);
                         return created;
                     });
 
             admin.setUsername(ADMIN_USERNAME);
-            admin.setPassword(passwordEncoder.encode(ADMIN_PASSWORD));
+            admin.setPassword(""); // Passwords gestionadas por Firebase
             admin.setRoleId(adminRole.getId());
             userRepository.save(admin);
 
             log.info("Usuario administrador listo: {} / {}", ADMIN_USERNAME, ADMIN_PASSWORD);
 
-            Role trainerRole = roleRepository.findByNameIgnoreCase("TRAINER").orElseThrow();
-            User trainer = userRepository.findByUsernameIgnoreCase("entrenador")
+
+            User trainer = userRepository.findById("trainer-demo-uid")
                     .orElseGet(() -> {
                         User created = new User();
+                        created.setId("trainer-demo-uid");
                         created.setUsername("entrenador");
                         return created;
                     });
             trainer.setUsername("entrenador");
-            trainer.setPassword(passwordEncoder.encode("entrenador"));
+            trainer.setPassword("");
             trainer.setRoleId(trainerRole.getId());
             userRepository.save(trainer);
-            log.info("Usuario entrenador demo: entrenador / entrenador");
+            log.info("Usuario entrenador demo: no puede loguearse sin Firebase (ID simulado)");
 
             demoDataSeeder.seed(teamRepository, playerRepository, admin.getId());
 
@@ -89,21 +92,22 @@ public class DataInitializer {
 
             Team demoTeam = teamRepository.findByName("FC Prueba");
 
-            Role userRole = roleRepository.findByNameIgnoreCase("USER").orElseThrow();
-            User fan = userRepository.findByUsernameIgnoreCase("usuario")
+
+            User fan = userRepository.findById("fan-demo-uid")
                     .orElseGet(() -> {
                         User created = new User();
+                        created.setId("fan-demo-uid");
                         created.setUsername("usuario");
                         return created;
                     });
             fan.setUsername("usuario");
-            fan.setPassword(passwordEncoder.encode("usuario"));
+            fan.setPassword("");
             fan.setRoleId(userRole.getId());
             if (demoTeam != null) {
                 fan.setTeamId(demoTeam.getId());
             }
             userRepository.save(fan);
-            log.info("Usuario base demo: usuario / usuario (sigue a FC Prueba)");
+            log.info("Usuario base demo: no puede loguearse sin Firebase (ID simulado)");
             if (demoTeam != null) {
                 for (Match match : matchRepository.findAll()) {
                     boolean changed = false;
@@ -120,7 +124,20 @@ public class DataInitializer {
                     }
                 }
 
-                seedClosedMatch(demoTeam, playerRepository, matchRepository, statisticRepository);
+                log.info("Borrando estadísticas previas para reiniciar las 38 jornadas...");
+                for (Statistic s : statisticRepository.findAll()) {
+                    statisticRepository.deleteById(s.getId());
+                }
+                log.info("Borrando partidos previos...");
+                for (Match m : matchRepository.findAll()) {
+                    matchRepository.deleteById(m.getId());
+                }
+                
+                log.info("Generando las 38 jornadas...");
+                for (int i = 1; i <= 38; i++) {
+                    seedClosedMatch(demoTeam, playerRepository, matchRepository, statisticRepository, i);
+                }
+                log.info("Generación de jornadas finalizada.");
             }
         };
     }
@@ -129,14 +146,10 @@ public class DataInitializer {
             Team team,
             PlayerRepository playerRepository,
             MatchRepository matchRepository,
-            StatisticRepository statisticRepository
+            StatisticRepository statisticRepository,
+            int matchNumber
     ) {
-        String location = "Partido demo cerrado";
-        boolean exists = matchRepository.findAll().stream()
-                .anyMatch(m -> location.equalsIgnoreCase(m.getLocation()));
-        if (exists) {
-            return;
-        }
+        String location = "Jornada " + matchNumber;
 
         List<Player> roster = new ArrayList<>(playerRepository.findByTeamId(team.getId()));
         if (roster.isEmpty()) {
@@ -150,18 +163,18 @@ public class DataInitializer {
         Match match = new Match();
         match.setTeamId(team.getId());
         match.setLocation(location);
-        match.setOpponentName("FC Rival Demo");
-        match.setDate(LocalDateTime.now().minusDays(1).withSecond(0).withNano(0));
+        match.setOpponentName("FC Rival " + matchNumber);
+        match.setDate(new Date(System.currentTimeMillis() - (86400000L * (40 - matchNumber)))); // Fechas escalonadas
         match.setHome(true);
         match.setStatus(MatchStatus.FINISHED);
         matchRepository.save(match);
 
-        match.setSquad(new ArrayList<>(squad));
-        match.setLineup(new ArrayList<>(lineup));
+        match.setSquadPlayerIds(squad.stream().map(Player::getId).collect(Collectors.toList()));
+        match.setLineupPlayerIds(lineup.stream().map(Player::getId).collect(Collectors.toList()));
         matchRepository.save(match);
 
-        Random random = new Random(20260517L);
-        int opponentScore = random.nextInt(5);
+        Random random = new Random(20260517L + matchNumber);
+        int opponentScore = random.nextInt(4);
         int teamScore = random.nextInt(5);
         match.setTeamScore(teamScore);
         match.setOpponentScore(opponentScore);
@@ -171,12 +184,33 @@ public class DataInitializer {
 
         for (Player p : squad) {
             Statistic stat = new Statistic();
-            stat.setPlayer(p);
-            stat.setMatchEntity(match);
+            stat.setPlayerId(p.getId());
+            stat.setMatchId(match.getId());
             stat.setMatch(label);
             boolean starter = lineup.stream().anyMatch(lp -> lp.getId().equals(p.getId()));
             int minutes = starter ? 60 + random.nextInt(36) : random.nextInt(46);
             stat.setMinutesPlayed(minutes);
+
+            boolean isPortero = "Portero".equalsIgnoreCase(p.getPosition());
+            int passesTotal = 10 + random.nextInt(40);
+            stat.setPassesTotal(passesTotal);
+            stat.setPassesCompleted((int) (passesTotal * (0.6 + (random.nextDouble() * 0.3))));
+            
+            int duelsTotal = random.nextInt(15);
+            stat.setDuelsTotal(duelsTotal);
+            stat.setDuelsWon((int) (duelsTotal * (0.3 + (random.nextDouble() * 0.5))));
+            
+            stat.setInterceptions(random.nextInt(6));
+
+            if (isPortero) {
+                stat.setSaves(random.nextInt(6));
+                stat.setGoalsConceded(opponentScore);
+            } else {
+                int shots = random.nextInt(5);
+                stat.setShotsTotal(shots);
+                stat.setShotsOnTarget((int) (shots * (0.2 + (random.nextDouble() * 0.8))));
+            }
+
             statisticRepository.save(stat);
         }
 
@@ -197,7 +231,7 @@ public class DataInitializer {
     }
 
     private Role ensureRole(RoleRepository repository, String name) {
-        return repository.findByNameIgnoreCase(name).orElseGet(() -> {
+        return repository.findByName(name).orElseGet(() -> {
             Role role = new Role();
             role.setName(name);
             return repository.save(role);

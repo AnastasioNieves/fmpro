@@ -9,9 +9,10 @@ import org.springframework.stereotype.Service;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
-@SuppressWarnings("null")
+@SuppressWarnings("all")
 public class AccessControlService {
 
     private final CurrentUserService currentUserService;
@@ -26,30 +27,33 @@ public class AccessControlService {
         return currentUserService.requireUser();
     }
 
-    public List<Long> getVisibleTeamIds() {
+    public List<String> getVisibleTeamIdsStr() {
         SecurityUser user = requireUser();
         if (currentUserService.isAdmin(user)) {
-            return teamRepository.findAll().stream().map(Team::getId).toList();
+            return teamRepository.findAll().stream().map(Team::getId).collect(Collectors.toList());
         }
         if (currentUserService.isTrainer(user)) {
-            return teamRepository.findByOwnerUserId(user.getId()).stream().map(Team::getId).toList();
+            return teamRepository.findByOwnerUserId(user.getId()).stream().map(Team::getId).collect(Collectors.toList());
         }
-        if (user.getTeamId() != null) {
+        if (user.getTeamId() != null && !user.getTeamId().isEmpty()) {
             return List.of(user.getTeamId());
         }
         return Collections.emptyList();
     }
 
-    public void assertCanViewTeam(Long teamId) {
-        if (teamId == null) {
+    public void assertCanViewTeamStr(String teamId) {
+        SecurityUser user = requireUser();
+        if (currentUserService.isAdmin(user)) return;
+
+        if (teamId == null || teamId.isEmpty()) {
             throw new AccessDeniedException("Equipo no especificado.");
         }
-        if (!getVisibleTeamIds().contains(teamId)) {
+        if (!getVisibleTeamIdsStr().contains(teamId)) {
             throw new AccessDeniedException("No tienes acceso a este equipo.");
         }
     }
 
-    public void assertCanManageTeam(Long teamId) {
+    public void assertCanManageTeamStr(String teamId) {
         SecurityUser user = requireUser();
         if (currentUserService.isAdmin(user)) {
             return;
@@ -65,14 +69,13 @@ public class AccessControlService {
     }
 
     public void assertCanViewMatch(Match match) {
-        if (match.getTeamId() == null) {
-            SecurityUser user = requireUser();
-            if (currentUserService.isAdmin(user)) {
-                return;
-            }
+        SecurityUser user = requireUser();
+        if (currentUserService.isAdmin(user)) return;
+
+        if (match.getTeamId() == null || match.getTeamId().isEmpty()) {
             throw new AccessDeniedException("No tienes acceso a este partido.");
         }
-        assertCanViewTeam(match.getTeamId());
+        assertCanViewTeamStr(match.getTeamId());
     }
 
     public void assertCanManageMatch(Match match) {
@@ -81,9 +84,8 @@ public class AccessControlService {
         if (currentUserService.isUser(user)) {
             throw new AccessDeniedException("Solo puedes consultar partidos en modo lectura.");
         }
-        if (currentUserService.isTrainer(user) && match.getTeamId() != null) {
-            assertCanManageTeam(match.getTeamId());
+        if (currentUserService.isTrainer(user) && match.getTeamId() != null && !match.getTeamId().isEmpty()) {
+            assertCanManageTeamStr(match.getTeamId());
         }
     }
 }
-

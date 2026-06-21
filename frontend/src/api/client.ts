@@ -1,4 +1,5 @@
 const API_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+import { auth } from '../firebase';
 
 export class ApiError extends Error {
   constructor(
@@ -32,6 +33,16 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     'Content-Type': 'application/json',
     ...(options.headers as Record<string, string>),
   };
+
+  const currentUser = auth.currentUser;
+  if (currentUser) {
+    try {
+      const token = await currentUser.getIdToken();
+      (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
+    } catch (e) {
+      console.warn("Could not get firebase token", e);
+    }
+  }
 
   const response = await fetch(`${API_URL}${path}`, {
     ...options,
@@ -67,7 +78,19 @@ async function requestBlob(path: string): Promise<Blob> {
     );
   }
 
+  const headers: Record<string, string> = {};
+  const currentUser = auth.currentUser;
+  if (currentUser) {
+    try {
+      const token = await currentUser.getIdToken();
+      headers['Authorization'] = `Bearer ${token}`;
+    } catch (e) {
+      console.warn("Could not get firebase token", e);
+    }
+  }
+
   const response = await fetch(`${API_URL}${path}`, {
+    headers,
     credentials: 'include' // 👈 ESTE ES EL FIX
   });
 
@@ -93,9 +116,21 @@ async function uploadFile<T>(path: string, file: File, fieldName = 'file'): Prom
   const form = new FormData();
   form.append(fieldName, file);
 
+  const headers: Record<string, string> = {};
+  const currentUser = auth.currentUser;
+  if (currentUser) {
+    try {
+      const token = await currentUser.getIdToken();
+      headers['Authorization'] = `Bearer ${token}`;
+    } catch (e) {
+      console.warn("Could not get firebase token", e);
+    }
+  }
+
   const response = await fetch(`${API_URL}${path}`, {
     method: 'POST',
     body: form,
+    headers,
     credentials: 'include',
   });
 
@@ -139,8 +174,8 @@ export const api = {
 export const endpoints = {
   teams: '/api/teams',
   teamsPublic: '/api/teams/public',
-  matchScore: (id: number) => `/api/matches/${id}/score`,
-  matchClose: (id: number) => `/api/matches/${id}/close`,
+  matchScore: (id: string | number) => `/api/matches/${id}/score`,
+  matchClose: (id: string | number) => `/api/matches/${id}/close`,
   auth: {
     login: '/api/auth/login',
     register: '/api/auth/register',
@@ -148,18 +183,18 @@ export const endpoints = {
     me: '/api/auth/me',
   },
   players: '/api/players',
-  playerPhoto: (id: number) => `/api/players/${id}/photo`,
+  playerPhoto: (id: string | number) => `/api/players/${id}/photo`,
   matches: '/api/matches',
-  match: (id: number) => `/api/matches/${id}`,
-  matchSquad: (id: number) => `/api/matches/${id}/squad`,
-  matchLineup: (id: number) => `/api/matches/${id}/lineup`,
-  matchLiveStats: (id: number) => `/api/matches/${id}/live-stats`,
+  match: (id: string | number) => `/api/matches/${id}`,
+  matchSquad: (id: string | number) => `/api/matches/${id}/squad`,
+  matchLineup: (id: string | number) => `/api/matches/${id}/lineup`,
+  matchLiveStats: (id: string | number) => `/api/matches/${id}/live-stats`,
   statistics: '/api/statistics',
   statisticsSummary: '/api/statistics/summary',
-  statisticsByTeam: (teamId: number) => `/api/statistics/team/${teamId}`,
-  statisticsByPlayer: (playerId: number) => `/api/statistics/player/${playerId}`,
-  reportTeam: (teamId: number) => `/api/reports/teams/${teamId}`,
-  reportPlayer: (playerId: number) => `/api/reports/players/${playerId}`,
+  statisticsByTeam: (teamId: string | number) => `/api/statistics/team/${teamId}`,
+  statisticsByPlayer: (playerId: string | number) => `/api/statistics/player/${playerId}`,
+  reportTeam: (teamId: string | number) => `/api/reports/teams/${teamId}`,
+  reportPlayer: (playerId: string | number) => `/api/reports/players/${playerId}`,
   roles: '/api/roles',
   rolesRegisterable: '/api/roles/registerable',
 };

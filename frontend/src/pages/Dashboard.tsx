@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar, Shield, TrendingUp, Users, ChevronLeft, ChevronRight } from 'lucide-react';
 import { api, endpoints } from '../api/client';
 import { Alert, Card, Spinner } from '../components/ui';
 import { useFetch } from '../hooks/useFetch';
-import type { Match, Player, StatisticsSummary, Team } from '../types';
+import type { Match, Player, StatisticsSummary, Team, Statistic } from '../types';
+import { FUTCard } from '../components/FUTCard';
 
 export function Dashboard() {
   const teams = useFetch(() => api.get<Team[]>(endpoints.teams), []);
@@ -103,6 +104,99 @@ export function Dashboard() {
   });
 
 
+
+  const [teamStats, setTeamStats] = useState<Statistic[]>([]);
+  useEffect(() => {
+    if (currentTeam?.id) {
+      api.get<Statistic[]>(endpoints.statisticsByTeam(currentTeam.id))
+        .then(setTeamStats)
+        .catch(console.error);
+    }
+  }, [currentTeam?.id]);
+
+  const futPlayers = useMemo(() => {
+    if (!teamStats || teamStats.length === 0 || !players.data) return { bestByPos: [], keyPlayers: [] };
+    
+    const byPlayer = new Map<string, any>();
+    teamStats.forEach(s => {
+      const id = String(s.player?.id ?? '');
+      if (!id) return;
+      const p = players.data?.find(pl => String(pl.id) === id);
+      if (!p) return;
+      
+      const current = byPlayer.get(id) || {
+        id, name: p.name, position: p.position, photoUrl: p.photoUrl,
+        goals: 0, assists: 0, minutes: 0, shotsOnTarget: 0, shotsTotal: 0,
+        passesCompleted: 0, passesTotal: 0, duelsWon: 0, duelsTotal: 0,
+        interceptions: 0, saves: 0,
+      };
+      
+      current.goals += s.goals || 0;
+      current.assists += s.assists || 0;
+      current.minutes += s.minutesPlayed || 0;
+      current.shotsOnTarget += s.shotsOnTarget || 0;
+      current.shotsTotal += s.shotsTotal || 0;
+      current.passesCompleted += s.passesCompleted || 0;
+      current.passesTotal += s.passesTotal || 0;
+      current.duelsWon += s.duelsWon || 0;
+      current.duelsTotal += s.duelsTotal || 0;
+      current.interceptions += s.interceptions || 0;
+      current.saves += s.saves || 0;
+      
+      byPlayer.set(id, current);
+    });
+
+    const arr = Array.from(byPlayer.values());
+    if (arr.length === 0) return { bestByPos: [], keyPlayers: [] };
+
+    const scoredArr = arr.map(p => {
+      const isGK = p.position.toLowerCase().includes('por');
+      const score = p.goals * 20 + p.assists * 15 + (isGK ? p.saves * 0.5 : 0) + p.interceptions * 3 + p.minutes / 10;
+      return { ...p, score };
+    }).sort((a,b) => b.score - a.score);
+    
+    const keyPlayers = scoredArr.filter(p => !p.position.toLowerCase().includes('por')).slice(0, 2);
+
+    const bestGK = scoredArr.filter(p => p.position.toLowerCase().includes('por')).sort((a,b) => b.score - a.score)[0];
+    const bestDEF = scoredArr.filter(p => p.position.toLowerCase().includes('def')).sort((a,b) => b.score - a.score)[0];
+    const bestMID = scoredArr.filter(p => p.position.toLowerCase().includes('cen')).sort((a,b) => b.score - a.score)[0];
+    const bestFWD = scoredArr.filter(p => p.position.toLowerCase().includes('del')).sort((a,b) => b.score - a.score)[0];
+
+    return {
+      keyPlayers,
+      bestByPos: [bestGK, bestDEF, bestMID, bestFWD].filter(Boolean)
+    };
+  }, [teamStats, players.data]);
+
+  const mapToFUT = (p: any) => {
+    const isGK = p.position.toLowerCase().includes('por');
+    const rating = Math.min(99, Math.max(65, 70 + Math.floor((p.goals * 5 + p.assists * 3 + (isGK ? p.saves * 0.2 : 0) + p.interceptions * 2) / 5)));
+    if (isGK) {
+      return {
+        name: p.name, position: 'POR', photoUrl: p.photoUrl, rating,
+        stats: {
+          label1: 'PAR', val1: p.saves,
+          label2: 'PAS', val2: p.passesTotal,
+          label3: 'INT', val3: p.interceptions,
+          label4: 'MIN', val4: p.minutes,
+          label5: 'P.%', val5: p.passesTotal ? Math.round(p.passesCompleted/p.passesTotal*100) : 0,
+          label6: 'D.%', val6: p.duelsTotal ? Math.round(p.duelsWon/p.duelsTotal*100) : 0,
+        }
+      };
+    } else {
+      return {
+        name: p.name, position: p.position.substring(0,3).toUpperCase(), photoUrl: p.photoUrl, rating,
+        stats: {
+          label1: 'PAC', val1: Math.min(99, 70 + (p.name.length * 2)),
+          label2: 'SHO', val2: Math.min(99, p.goals * 5 + p.shotsOnTarget * 2),
+          label3: 'PAS', val3: p.passesTotal ? Math.round(p.passesCompleted/p.passesTotal*100) : 0,
+          label4: 'DRI', val4: Math.min(99, 65 + p.duelsWon * 2),
+          label5: 'DEF', val5: Math.min(99, 50 + p.interceptions * 3),
+          label6: 'PHY', val6: Math.min(99, 60 + Math.floor(p.minutes / 50)),
+        }
+      };
+    }
+  };
 
   return (
     <div className="page">
@@ -248,6 +342,28 @@ export function Dashboard() {
               </ul>
             )}
           </Card>
+
+          {futPlayers.keyPlayers.length > 0 && (
+            <div style={{ marginTop: '3rem' }}>
+              <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem', color: 'var(--text)' }}>Jugadores Clave (MVPs)</h2>
+              <div style={{ display: 'flex', gap: '2rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                {futPlayers.keyPlayers.map(p => (
+                  <FUTCard key={p.id} {...mapToFUT(p)} variant="totw" />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {futPlayers.bestByPos.length > 0 && (
+            <div style={{ marginTop: '3rem' }}>
+              <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem', color: 'var(--text)' }}>Mejores por Posición</h2>
+              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                {futPlayers.bestByPos.map(p => (
+                  <FUTCard key={p.id} {...mapToFUT(p)} variant="gold" />
+                ))}
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>

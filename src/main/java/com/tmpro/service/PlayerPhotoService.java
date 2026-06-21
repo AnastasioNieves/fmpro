@@ -15,7 +15,7 @@ import java.util.Locale;
 import java.util.Set;
 
 @Service
-@SuppressWarnings("null")
+@SuppressWarnings("all")
 public class PlayerPhotoService {
 
     private static final Set<String> ALLOWED = Set.of("image/jpeg", "image/png", "image/webp");
@@ -34,7 +34,7 @@ public class PlayerPhotoService {
         this.playersDir = Paths.get(uploadsDir, "players").toAbsolutePath().normalize();
     }
 
-    public String savePhoto(Long playerId, MultipartFile file) {
+    public String savePhoto(String playerId, MultipartFile file) {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("Selecciona una imagen.");
         }
@@ -45,8 +45,8 @@ public class PlayerPhotoService {
 
         Player player = playerRepository.findById(playerId)
                 .orElseThrow(() -> new IllegalArgumentException("Jugador no encontrado"));
-        if (player.getTeam() != null) {
-            accessControl.assertCanManageTeam(player.getTeam().getId());
+        if (player.getTeamId() != null) {
+            accessControl.assertCanManageTeamStr(player.getTeamId());
         }
 
         String extension = switch (contentType.toLowerCase(Locale.ROOT)) {
@@ -69,7 +69,7 @@ public class PlayerPhotoService {
         }
     }
 
-    private void deleteExistingFiles(Long playerId) throws IOException {
+    private void deleteExistingFiles(String playerId) throws IOException {
         for (String ext : new String[]{".jpg", ".jpeg", ".png", ".webp"}) {
             Path candidate = playersDir.resolve(playerId + ext);
             if (Files.exists(candidate)) {
@@ -78,4 +78,3 @@ public class PlayerPhotoService {
         }
     }
 }
-

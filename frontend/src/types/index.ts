@@ -1,11 +1,11 @@
 export interface Team {
-  id?: number;
+  id?: string | number;
   name: string;
   coach: string;
 }
 
 export interface Player {
-  id?: number;
+  id?: string | number;
   name: string;
   position: string;
   dorsal: string;
@@ -20,15 +20,15 @@ export interface StatisticsSummary {
 }
 
 export interface PlayerSummary {
-  id: number;
+  id: string | number;
   name: string;
   position: string;
   dorsal: string;
 }
 
 export interface LiveStat {
-  id?: number;
-  playerId: number;
+  id?: string | number;
+  playerId: string;
   playerName: string;
   dorsal: string;
   position: string;
@@ -51,10 +51,10 @@ export type MatchStatus = 'SCHEDULED' | 'FINISHED';
 export type FormationType = '4-3-3' | '4-4-2' | '3-5-2' | '4-2-3-1' | 'Personalizada';
 
 export interface MatchDetail {
-  id: number;
+  id: string | number;
   date: string;
   location: string;
-  teamId?: number;
+  teamId?: string | number;
   opponentName?: string;
   status?: MatchStatus;
   home?: boolean;
@@ -64,14 +64,14 @@ export interface MatchDetail {
   lineup: PlayerSummary[];
   liveStats: LiveStat[];
   formation?: FormationType;
-  lineupPositions?: Record<number, string>;
+  lineupPositions?: Record<string, string>;
 }
 
 export interface Match {
-  id?: number;
+  id?: string | number;
   date: string;
   location: string;
-  teamId?: number;
+  teamId?: string | number;
   opponentName?: string;
   status?: MatchStatus;
   home?: boolean;
@@ -90,7 +90,7 @@ export interface MatchScoreUpdate {
 }
 
 export interface Statistic {
-  id?: number;
+  id?: string | number;
   player?: Player;
   match: string;
   goals: number;
@@ -110,28 +110,28 @@ export interface Statistic {
 }
 
 export interface Role {
-  id: number;
+  id: string | number;
   name: string;
 }
 
 export interface AuthUser {
-  id: number;
+  id: string | number;
   username: string;
-  roleId: number;
+  roleId: string | number;
   roleName: string;
-  teamId?: number | null;
+  teamId?: string | number | null;
 }
 
 export interface UserRequest {
   username: string;
   password: string;
-  roleId: number;
-  teamId?: number;
+  roleId: string | number;
+  teamId?: string | number;
 }
 
 export interface UserResponse {
-  id: number;
+  id: string | number;
   username: string;
-  roleId: number;
+  roleId: string | number;
   roleName: string;
 }

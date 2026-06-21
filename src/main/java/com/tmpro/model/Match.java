@@ -1,75 +1,38 @@
 package com.tmpro.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import jakarta.persistence.*;
-
-import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.ArrayList;
 import java.util.List;
 
-@Entity
-@Table(name = "matches")
 public class Match {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    private LocalDateTime date;
+    private String id;
+    private Date date;
     private String location;
-
-    @Column(name = "team_id")
-    private Long teamId;
-
+    private String teamId;
     private String opponentName = "Rival";
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status")
     private MatchStatus status = MatchStatus.SCHEDULED;
-
-    @Column(name = "is_home")
     private Boolean home = true;
-
-    @Column(name = "team_score")
     private Integer teamScore = 0;
-
-    @Column(name = "opponent_score")
     private Integer opponentScore = 0;
 
-    @ManyToMany
-    @JoinTable(
-            name = "match_squad",
-            joinColumns = @JoinColumn(name = "match_id"),
-            inverseJoinColumns = @JoinColumn(name = "player_id")
-    )
-    @JsonIgnore
-    @JsonIgnoreProperties({"team", "hibernateLazyInitializer", "handler"})
-    private List<Player> squad = new ArrayList<>();
+    // En Firestore usaremos arrays de strings para los IDs de los jugadores
+    private List<String> squadPlayerIds = new ArrayList<>();
+    private List<String> lineupPlayerIds = new ArrayList<>();
 
-    @ManyToMany
-    @JoinTable(
-            name = "match_lineup",
-            joinColumns = @JoinColumn(name = "match_id"),
-            inverseJoinColumns = @JoinColumn(name = "player_id")
-    )
-    @JsonIgnore
-    @JsonIgnoreProperties({"team", "hibernateLazyInitializer", "handler"})
-    private List<Player> lineup = new ArrayList<>();
-
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 
-    public LocalDateTime getDate() {
+    public Date getDate() {
         return date;
     }
 
-    public void setDate(LocalDateTime date) {
+    public void setDate(Date date) {
         this.date = date;
     }
 
@@ -81,11 +44,11 @@ public class Match {
         this.location = location;
     }
 
-    public Long getTeamId() {
+    public String getTeamId() {
         return teamId;
     }
 
-    public void setTeamId(Long teamId) {
+    public void setTeamId(String teamId) {
         this.teamId = teamId;
     }
 
@@ -129,19 +92,19 @@ public class Match {
         this.opponentScore = opponentScore;
     }
 
-    public List<Player> getSquad() {
-        return squad;
+    public List<String> getSquadPlayerIds() {
+        return squadPlayerIds;
     }
 
-    public void setSquad(List<Player> squad) {
-        this.squad = squad != null ? squad : new ArrayList<>();
+    public void setSquadPlayerIds(List<String> squadPlayerIds) {
+        this.squadPlayerIds = squadPlayerIds != null ? squadPlayerIds : new ArrayList<>();
     }
 
-    public List<Player> getLineup() {
-        return lineup;
+    public List<String> getLineupPlayerIds() {
+        return lineupPlayerIds;
     }
 
-    public void setLineup(List<Player> lineup) {
-        this.lineup = lineup != null ? lineup : new ArrayList<>();
+    public void setLineupPlayerIds(List<String> lineupPlayerIds) {
+        this.lineupPlayerIds = lineupPlayerIds != null ? lineupPlayerIds : new ArrayList<>();
     }
 }

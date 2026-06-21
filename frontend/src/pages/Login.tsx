@@ -92,8 +92,8 @@ export function Login() {
         await register({
           username: username.trim(),
           password,
-          roleId: Number(roleId),
-          teamId: selectedRoleName === 'USER' ? Number(teamId) : undefined,
+          roleId: roleId,
+          teamId: selectedRoleName === 'USER' ? teamId : undefined,
         });
       }
       navigate(redirectTo, { replace: true });

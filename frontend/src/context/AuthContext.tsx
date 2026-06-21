@@ -7,8 +7,12 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { api, ApiError, endpoints } from '../api/client';
+import { api, endpoints } from '../api/client';
 import type { AuthUser, UserRequest, UserResponse } from '../types';
+import { auth } from '../firebase';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onIdTokenChanged } from 'firebase/auth';
+
+const getFirebaseEmail = (username: string) => username.includes('@') ? username : `${username}@fmpro.com`;
 
 interface AuthContextValue {
   user: AuthUser | null;
@@ -29,51 +33,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const refreshSession = useCallback(async () => {
-    try {
-      const me = await api.get<AuthUser>(endpoints.auth.me);
-      setUser(me);
-    } catch (e) {
-      if (e instanceof ApiError && e.status === 401) {
-        setUser(null);
+  useEffect(() => {
+    const unsubscribe = onIdTokenChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        try {
+          const me = await api.get<AuthUser>(endpoints.auth.me);
+          setUser(me);
+        } catch (e) {
+          console.error("Error fetching user profile", e);
+          setUser(null);
+        }
       } else {
         setUser(null);
       }
-    } finally {
       setLoading(false);
-    }
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  useEffect(() => {
-    void refreshSession();
-  }, [refreshSession]);
-
   const login = useCallback(async (username: string, password: string) => {
-    const authenticated = await api.post<AuthUser>(endpoints.auth.login, {
-      username,
-      password,
-    });
-    setUser(authenticated);
+    await signInWithEmailAndPassword(auth, getFirebaseEmail(username), password);
   }, []);
 
   const register = useCallback(async (data: UserRequest) => {
-    const created = await api.post<UserResponse>(endpoints.auth.register, data);
-    setUser({
-      id: created.id,
-      username: created.username,
-      roleId: created.roleId,
-      roleName: created.roleName,
-      teamId: data.teamId,
-    });
-    await refreshSession();
-  }, [refreshSession]);
+    const userCredential = await createUserWithEmailAndPassword(auth, getFirebaseEmail(data.username), data.password);
+    const uid = userCredential.user.uid;
+    
+    try {
+      await api.post<UserResponse>(endpoints.auth.register, {
+        ...data,
+        id: uid
+      });
+      // onIdTokenChanged se encargará de actualizar el usuario al estar logueado
+    } catch (e) {
+      await userCredential.user.delete().catch(() => {});
+      throw e;
+    }
+  }, []);
 
   const logout = useCallback(async () => {
     try {
       await api.post(endpoints.auth.logout, {});
     } catch {
-      /* sesión ya caducada */
+      /* ignorar */
     }
+    await signOut(auth);
     setUser(null);
   }, []);
 

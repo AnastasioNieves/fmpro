@@ -29,12 +29,12 @@ export function Players() {
   const players = useFetch(() => api.get<Player[]>(endpoints.players), []);
   const teams = useFetch(() => api.get<Team[]>(endpoints.teams), []);
   const [form, setForm] = useState<Player>(emptyPlayer);
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  const [uploadingId, setUploadingId] = useState<number | null>(null);
+  const [uploadingId, setUploadingId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [photoTargetId, setPhotoTargetId] = useState<number | null>(null);
+  const [photoTargetId, setPhotoTargetId] = useState<string | null>(null);
 
   const teamName = (id: string) =>
     teams.data?.find((t) => String(t.id) === id)?.name ?? '—';
@@ -59,14 +59,14 @@ export function Players() {
     }
   }
 
-  async function handleDelete(id: number) {
+  async function handleDelete(id: string) {
     if (!confirm('¿Eliminar este jugador?')) return;
     await api.delete(`${endpoints.players}/${id}`);
     await players.reload();
   }
 
   function startEdit(player: Player) {
-    setEditingId(player.id ?? null);
+    setEditingId(player.id ? String(player.id) : null);
     setForm({
       name: player.name,
       position: player.position,
@@ -75,7 +75,7 @@ export function Players() {
     });
   }
 
-  function openPhotoPicker(playerId: number) {
+  function openPhotoPicker(playerId: string) {
     setPhotoTargetId(playerId);
     fileInputRef.current?.click();
   }
@@ -206,7 +206,7 @@ export function Players() {
                     className="player-card__photo-btn"
                     title="Cambiar foto"
                     disabled={uploadingId === player.id}
-                    onClick={() => openPhotoPicker(player.id!)}
+                    onClick={() => openPhotoPicker(String(player.id))}
                   >
                     <Camera size={16} />
                     {uploadingId === player.id ? 'Subiendo…' : 'Foto'}
@@ -224,7 +224,7 @@ export function Players() {
                   <Button variant="ghost" onClick={() => startEdit(player)}>
                     Editar
                   </Button>
-                  <Button variant="danger" onClick={() => handleDelete(player.id!)}>
+                  <Button variant="danger" onClick={() => handleDelete(String(player.id))}>
                     <Trash2 size={16} />
                   </Button>
                 </div>

@@ -1,33 +1,24 @@
 package com.tmpro.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import jakarta.persistence.*;
-
-@Entity
-@Table(name = "players")
 public class Player {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
+    private String id;
     private String name;
     private String position;
     private String dorsal;
-
-    /** Ruta pública, p. ej. /uploads/players/1.jpg */
     private String photoUrl;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "team_id", nullable = false)
-    @JsonIgnoreProperties({"players", "hibernateLazyInitializer", "handler"})
-    private Team team;
+    // En lugar de anidar Team (OneToMany), almacenamos el ID del equipo.
+    // El frontend o DTO puede requerir el objeto Team, pero a nivel modelo es mejor el ID.
+    // Para simplificar la migración, dejaremos que Team se pueda inyectar temporalmente si se usa DTO, 
+    // pero el modelo persistido usará teamId.
+    private String teamId;
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 
@@ -63,11 +54,11 @@ public class Player {
         this.photoUrl = photoUrl;
     }
 
-    public Team getTeam() {
-        return team;
+    public String getTeamId() {
+        return teamId;
     }
 
-    public void setTeam(Team team) {
-        this.team = team;
+    public void setTeamId(String teamId) {
+        this.teamId = teamId;
     }
 }

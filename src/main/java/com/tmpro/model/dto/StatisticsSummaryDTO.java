@@ -2,24 +2,24 @@ package com.tmpro.model.dto;
 
 public class StatisticsSummaryDTO {
 
-    private long totalRecords;
+    private int totalRecords;
     private int totalGoals;
     private int totalAssists;
 
     public StatisticsSummaryDTO() {
     }
 
-    public StatisticsSummaryDTO(long totalRecords, int totalGoals, int totalAssists) {
+    public StatisticsSummaryDTO(int totalRecords, int totalGoals, int totalAssists) {
         this.totalRecords = totalRecords;
         this.totalGoals = totalGoals;
         this.totalAssists = totalAssists;
     }
 
-    public long getTotalRecords() {
+    public int getTotalRecords() {
         return totalRecords;
     }
 
-    public void setTotalRecords(long totalRecords) {
+    public void setTotalRecords(int totalRecords) {
         this.totalRecords = totalRecords;
     }
 

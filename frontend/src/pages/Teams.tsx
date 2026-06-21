@@ -15,7 +15,7 @@ export function Teams() {
     [],
   );
   const [form, setForm] = useState<Team>(emptyTeam);
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -39,14 +39,14 @@ export function Teams() {
     }
   }
 
-  async function handleDelete(id: number) {
+  async function handleDelete(id: string) {
     if (!confirm('¿Eliminar este equipo?')) return;
     await api.delete(`${endpoints.teams}/${id}`);
     await reload();
   }
 
   function startEdit(team: Team) {
-    setEditingId(team.id ?? null);
+    setEditingId(team.id ? String(team.id) : null);
     setForm({ name: team.name, coach: team.coach });
   }
 
@@ -121,7 +121,7 @@ export function Teams() {
                   <Button variant="ghost" onClick={() => startEdit(team)}>
                     Editar
                   </Button>
-                  <Button variant="danger" onClick={() => handleDelete(team.id!)}>
+                  <Button variant="danger" onClick={() => handleDelete(String(team.id))}>
                     <Trash2 size={16} />
                   </Button>
                 </div>

@@ -28,8 +28,8 @@ export function Matches() {
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const teamNameById = new Map<number, string>(
-    (teams.data ?? []).flatMap((t) => (t.id != null ? [[t.id, t.name] as const] : [])),
+  const teamNames = new Map<string, string>(
+    (teams.data || []).map(t => [String(t.id), t.name])
   );
 
   async function handleSubmit(e: FormEvent) {
@@ -42,7 +42,7 @@ export function Matches() {
     setFormError(null);
     try {
       const created = await api.post<Match>(endpoints.matches, {
-        teamId: Number(teamId),
+        teamId: teamId,
         location,
         opponentName: opponentName.trim() || 'Rival',
         home,
@@ -65,7 +65,7 @@ export function Matches() {
     }
   }
 
-  async function handleDelete(id: number) {
+  async function handleDelete(id: string) {
     if (!confirm('¿Eliminar este partido?')) return;
     await api.delete(`${endpoints.matches}/${id}`);
     await reload();
@@ -153,7 +153,7 @@ export function Matches() {
             {data?.map((match) => {
               const isHome = match.home ?? true;
               const finished = match.status === 'FINISHED';
-              const teamName = teamNameById.get(match.teamId ?? -1) ?? 'Equipo';
+              const teamName = teamNames.get(String(match.teamId)) ?? 'Equipo';
               const opponent = match.opponentName ?? 'Rival';
               const homeTeam = isHome ? teamName : opponent;
               const awayTeam = isHome ? opponent : teamName;
@@ -221,7 +221,7 @@ export function Matches() {
                         )}
                       </Link>
                       {canManageMatches && (
-                        <Button variant="danger" onClick={() => handleDelete(match.id!)}>
+                        <Button variant="danger" onClick={() => handleDelete(String(match.id))}>
                           <Trash2 size={16} />
                         </Button>
                       )}

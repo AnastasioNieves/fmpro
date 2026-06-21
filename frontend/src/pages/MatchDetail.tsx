@@ -34,7 +34,7 @@ type Tab = 'summary' | 'squad' | 'lineup' | 'live';
 
 export function MatchDetail() {
   const { id } = useParams<{ id: string }>();
-  const matchId = Number(id);
+  const matchId = id || '';
   const { canManageMatches, isUser } = useAuth();
 
   const [match, setMatch] = useState<MatchDetail | null>(null);
@@ -46,8 +46,8 @@ export function MatchDetail() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const [selectedSquad, setSelectedSquad] = useState<Set<number>>(new Set());
-  const [selectedLineup, setSelectedLineup] = useState<Set<number>>(new Set());
+  const [selectedSquad, setSelectedSquad] = useState<Set<string>>(new Set());
+  const [selectedLineup, setSelectedLineup] = useState<Set<string>>(new Set());
   const [liveStats, setLiveStats] = useState<LiveStat[]>([]);
   const [teamScore, setTeamScore] = useState(0);
   const [opponentScore, setOpponentScore] = useState(0);
@@ -55,10 +55,10 @@ export function MatchDetail() {
   
   // Substitution State
   const [subModalOpen, setSubModalOpen] = useState(false);
-  const [subPlayerOut, setSubPlayerOut] = useState<number | null>(null);
-  const [subPlayerIn, setSubPlayerIn] = useState<number | null>(null);
+  const [subPlayerOut, setSubPlayerOut] = useState<string | null>(null);
+  const [subPlayerIn, setSubPlayerIn] = useState<string | null>(null);
   const [formation, setFormation] = useState<import('../types').FormationType>('4-3-3');
-  const [lineupPositions, setLineupPositions] = useState<Record<number, string>>({});
+  const [lineupPositions, setLineupPositions] = useState<Record<string, string>>({});
 
   // Timer State
   const [timerState, setTimerState] = useState<{ isRunning: boolean; startTime: number | null; elapsedSeconds: number }>({ isRunning: false, startTime: null, elapsedSeconds: 0 });
@@ -105,8 +105,8 @@ export function MatchDetail() {
 
   const applyDetail = useCallback((detail: MatchDetail) => {
     setMatch(detail);
-    setSelectedSquad(new Set(detail.squad.map((p) => p.id)));
-    setSelectedLineup(new Set(detail.lineup.map((p) => p.id)));
+    setSelectedSquad(new Set(detail.squad.map((p) => String(p.id))));
+    setSelectedLineup(new Set(detail.lineup.map((p) => String(p.id))));
     setLiveStats(detail.liveStats);
     setTeamScore(detail.teamScore ?? 0);
     setOpponentScore(detail.opponentScore ?? 0);
@@ -197,7 +197,7 @@ export function MatchDetail() {
   const finished = match?.status === 'FINISHED';
   const canEdit = canManageMatches && !finished;
 
-  function toggleSquad(playerId: number) {
+  function toggleSquad(playerId: string) {
     if (!canEdit) return;
     setSelectedSquad((prev) => {
       const next = new Set(prev);
@@ -215,7 +215,7 @@ export function MatchDetail() {
     });
   }
 
-  function toggleLineup(playerId: number) {
+  function toggleLineup(playerId: string) {
     if (!canEdit) return;
     if (!selectedSquad.has(playerId)) return;
     setSelectedLineup((prev) => {
@@ -280,7 +280,7 @@ export function MatchDetail() {
     }
   }
 
-  function patchStat(playerId: number, field: string, delta: number) {
+  function patchStat(playerId: string, field: string, delta: number) {
     if (!canEdit) return;
     setLiveStats((prev) =>
       prev.map((s) => {
@@ -424,7 +424,7 @@ export function MatchDetail() {
   };
 
   const squadPlayers = allPlayers.filter((p) => p.id != null);
-  const convocated = squadPlayers.filter((p) => selectedSquad.has(p.id!));
+  const convocated = squadPlayers.filter((p) => selectedSquad.has(String(p.id)));
 
   const tabs = finished
     ? (isUser
@@ -652,14 +652,14 @@ export function MatchDetail() {
         <Card title="Convocatoria" subtitle="Selecciona los jugadores disponibles para el partido">
           <div className="player-pick-grid">
             {squadPlayers.map((p) => {
-              const selected = selectedSquad.has(p.id!);
+              const selected = selectedSquad.has(String(p.id));
               return (
                 <button
                   key={p.id}
                   type="button"
                   disabled={!canEdit}
                   className={`player-pick${selected ? ' player-pick--on' : ''}`}
-                  onClick={() => toggleSquad(p.id!)}
+                  onClick={() => toggleSquad(String(p.id))}
                 >
                   <span className="player-pick__dorsal">{p.dorsal}</span>
                   <span className="player-pick__name">{p.name}</span>
@@ -714,16 +714,16 @@ export function MatchDetail() {
                 
                 {(() => {
                   const slotsForFormation = formationSlots[formation] || formationSlots['4-3-3'];
-                  const assignedPlayers = new Map<number, string>();
+                  const assignedPlayers = new Map<string, string>();
                   const takenSlots = new Set<string>();
                   
-                  const selectedPlayersList = convocated.filter((p) => selectedLineup.has(p.id!));
+                  const selectedPlayersList = convocated.filter((p) => selectedLineup.has(String(p.id)));
                   
                   // Primera pasada: respetar posiciones guardadas si existen en la formación actual
                   selectedPlayersList.forEach(p => {
-                    const pref = lineupPositions[p.id!];
+                    const pref = lineupPositions[String(p.id)];
                     if (pref && slotsForFormation.includes(pref) && !takenSlots.has(pref)) {
-                      assignedPlayers.set(p.id!, pref);
+                      assignedPlayers.set(String(p.id), pref);
                       takenSlots.add(pref);
                     }
                   });
@@ -733,15 +733,15 @@ export function MatchDetail() {
                   let slotIdx = 0;
                   
                   selectedPlayersList.forEach(p => {
-                    if (!assignedPlayers.has(p.id!)) {
+                    if (!assignedPlayers.has(String(p.id))) {
                       const fallbackSlot = availableSlots[slotIdx] || 'JUG';
-                      assignedPlayers.set(p.id!, fallbackSlot);
+                      assignedPlayers.set(String(p.id), fallbackSlot);
                       slotIdx++;
                     }
                   });
 
                   return selectedPlayersList.map((p) => {
-                    const role = assignedPlayers.get(p.id!) || 'JUG';
+                    const role = assignedPlayers.get(String(p.id)) || 'JUG';
                     const coords = positionCoordinates[role] || positionCoordinates['JUG'];
                     
                     return (
@@ -760,7 +760,7 @@ export function MatchDetail() {
               </div>
               <div className="player-pick-grid" style={{ marginTop: '1rem' }}>
                 {convocated.map((p) => {
-                  const selected = selectedLineup.has(p.id!);
+                  const selected = selectedLineup.has(String(p.id));
                   const full = selectedLineup.size >= 11 && !selected;
                   return (
                     <button
@@ -768,11 +768,11 @@ export function MatchDetail() {
                       type="button"
                       disabled={!canEdit || full}
                       className={`player-pick${selected ? ' player-pick--starter' : ''}${full ? ' player-pick--disabled' : ''}`}
-                      onClick={() => toggleLineup(p.id!)}
+                      onClick={() => toggleLineup(String(p.id))}
                     >
                       <span className="player-pick__dorsal">{p.dorsal}</span>
                       <span className="player-pick__name">{p.name}</span>
-                      <span className="player-pick__pos">{selected ? lineupPositions[p.id!] : p.position}</span>
+                      <span className="player-pick__pos">{selected ? lineupPositions[String(p.id)] : p.position}</span>
                     </button>
                   );
                 })}
@@ -822,19 +822,19 @@ export function MatchDetail() {
                 <div className="sub-grid">
                   <div className="sub-col">
                     <label className="text-rose">Sale del campo (Rojo)</label>
-                    <Select value={subPlayerOut || ''} onChange={e => setSubPlayerOut(Number(e.target.value))}>
+                    <Select value={subPlayerOut || ''} onChange={e => setSubPlayerOut(e.target.value)}>
                       <option value="">Seleccionar jugador...</option>
-                      {convocated.filter(p => selectedLineup.has(p.id!)).map(p => (
-                        <option key={p.id} value={p.id}>{p.dorsal} - {p.name}</option>
+                      {convocated.filter(p => selectedLineup.has(String(p.id))).map(p => (
+                        <option key={p.id} value={String(p.id)}>{p.dorsal} - {p.name}</option>
                       ))}
                     </Select>
                   </div>
                   <div className="sub-col">
                     <label className="text-accent">Entra al campo (Verde)</label>
-                    <Select value={subPlayerIn || ''} onChange={e => setSubPlayerIn(Number(e.target.value))}>
+                    <Select value={subPlayerIn || ''} onChange={e => setSubPlayerIn(e.target.value)}>
                       <option value="">Seleccionar jugador...</option>
-                      {convocated.filter(p => !selectedLineup.has(p.id!)).map(p => (
-                        <option key={p.id} value={p.id}>{p.dorsal} - {p.name}</option>
+                      {convocated.filter(p => !selectedLineup.has(String(p.id))).map(p => (
+                        <option key={p.id} value={String(p.id)}>{p.dorsal} - {p.name}</option>
                       ))}
                     </Select>
                   </div>

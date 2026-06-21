@@ -1,7 +1,7 @@
 package com.tmpro.model;
 
 public class StatisticDTO {
-    private Long id;
+    private String id;
     private PlayerDTO player;
     private String match;
     private int goals;
@@ -17,11 +17,10 @@ public class StatisticDTO {
     private int saves;
     private int goalsConceded;
 
-    // Constructor que acepta un objeto Statistic
-    public StatisticDTO(Statistic statistic) {
+    public StatisticDTO(Statistic statistic, Player p) {
         this.id = statistic.getId();
-        if (statistic.getPlayer() != null) {
-            this.player = new PlayerDTO(statistic.getPlayer());
+        if (p != null) {
+            this.player = new PlayerDTO(p);
         }
         this.match = statistic.getMatch();
         this.goals = statistic.getGoals();
@@ -39,11 +38,11 @@ public class StatisticDTO {
     }
 
     // Getters y setters
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 

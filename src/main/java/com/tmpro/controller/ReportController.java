@@ -15,13 +15,13 @@ public class ReportController {
     private ReportService reportService;
 
     @GetMapping("/players/{id}")
-    public ResponseEntity<byte[]> getPlayerReport(@PathVariable Long id) {
+    public ResponseEntity<byte[]> getPlayerReport(@PathVariable String id) {
         byte[] pdfContent = reportService.generatePlayerReport(id);
         return pdfResponse(pdfContent, "informe-jugador-" + id + ".pdf");
     }
 
     @GetMapping("/teams/{id}")
-    public ResponseEntity<byte[]> getTeamReport(@PathVariable Long id) {
+    public ResponseEntity<byte[]> getTeamReport(@PathVariable String id) {
         byte[] pdfContent = reportService.generateTeamReport(id);
         return pdfResponse(pdfContent, "informe-equipo-" + id + ".pdf");
     }

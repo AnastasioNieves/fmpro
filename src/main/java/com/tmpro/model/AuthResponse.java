@@ -2,20 +2,20 @@ package com.tmpro.model;
 
 public class AuthResponse {
 
-    private Long id;
+    private String id;
     private String username;
-    private Long roleId;
+    private String roleId;
     private String roleName;
-    private Long teamId;
+    private String teamId;
 
     public AuthResponse() {
     }
 
-    public AuthResponse(Long id, String username, Long roleId, String roleName) {
+    public AuthResponse(String id, String username, String roleId, String roleName) {
         this(id, username, roleId, roleName, null);
     }
 
-    public AuthResponse(Long id, String username, Long roleId, String roleName, Long teamId) {
+    public AuthResponse(String id, String username, String roleId, String roleName, String teamId) {
         this.id = id;
         this.username = username;
         this.roleId = roleId;
@@ -23,11 +23,11 @@ public class AuthResponse {
         this.teamId = teamId;
     }
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 
@@ -39,11 +39,11 @@ public class AuthResponse {
         this.username = username;
     }
 
-    public Long getRoleId() {
+    public String getRoleId() {
         return roleId;
     }
 
-    public void setRoleId(Long roleId) {
+    public void setRoleId(String roleId) {
         this.roleId = roleId;
     }
 
@@ -55,11 +55,11 @@ public class AuthResponse {
         this.roleName = roleName;
     }
 
-    public Long getTeamId() {
+    public String getTeamId() {
         return teamId;
     }
 
-    public void setTeamId(Long teamId) {
+    public void setTeamId(String teamId) {
         this.teamId = teamId;
     }
 }

@@ -16,9 +16,7 @@ import com.tmpro.security.SecurityUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -28,7 +26,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
-@SuppressWarnings("null")
+@SuppressWarnings("all")
 public class MatchService {
 
     private static final int STARTING_ELEVEN = 11;
@@ -49,18 +47,17 @@ public class MatchService {
     @Autowired
     private CurrentUserService currentUserService;
 
-    @Transactional(readOnly = true)
     public List<MatchSummaryDTO> findAllMatches() {
-        List<Long> teamIds = accessControl.getVisibleTeamIds();
+        List<String> teamIds = accessControl.getVisibleTeamIdsStr();
         SecurityUser user = accessControl.requireUser();
 
         List<Match> matches;
         if (currentUserService.isAdmin(user) && teamIds.isEmpty()) {
-            matches = matchRepository.findAll(Sort.by(Sort.Direction.DESC, "date"));
+            matches = matchRepository.findAll(); // Sorting by date descending is done in repository
         } else if (teamIds.isEmpty()) {
             matches = List.of();
         } else {
-            matches = matchRepository.findByTeamIdIn(teamIds, Sort.by(Sort.Direction.DESC, "date"));
+            matches = matchRepository.findByTeamIdIn(teamIds); // Sort is handled in repo
         }
 
         return matches.stream()
@@ -72,14 +69,12 @@ public class MatchService {
                 .collect(Collectors.toList());
     }
 
-    @Transactional(readOnly = true)
-    public MatchDetailDTO getMatchDetail(Long id) {
+    public MatchDetailDTO getMatchDetail(String id) {
         Match match = getMatchOrThrow(id);
         accessControl.assertCanViewMatch(match);
         return buildDetail(match);
     }
 
-    @Transactional
     public Match saveMatch(Match match) {
         SecurityUser user = accessControl.requireUser();
         if (!currentUserService.canManage(user)) {
@@ -89,7 +84,7 @@ public class MatchService {
         if (match.getTeamId() == null) {
             throw new IllegalArgumentException("Debes asignar un equipo al partido.");
         }
-        accessControl.assertCanManageTeam(match.getTeamId());
+        accessControl.assertCanManageTeamStr(match.getTeamId());
         if (match.getOpponentName() == null || match.getOpponentName().isBlank()) {
             match.setOpponentName("Rival");
         }
@@ -101,15 +96,13 @@ public class MatchService {
         return matchRepository.save(match);
     }
 
-    @Transactional
-    public void deleteMatch(Long id) {
+    public void deleteMatch(String id) {
         Match match = getMatchOrThrow(id);
         accessControl.assertCanManageMatch(match);
         matchRepository.deleteById(id);
     }
 
-    @Transactional
-    public MatchDetailDTO closeMatch(Long matchId) {
+    public MatchDetailDTO closeMatch(String matchId) {
         Match match = getMatchOrThrow(matchId);
         accessControl.assertCanManageMatch(match);
         if (match.getStatus() == MatchStatus.FINISHED) {
@@ -127,27 +120,27 @@ public class MatchService {
         return getMatchDetail(matchId);
     }
 
-    @Transactional
-    public MatchDetailDTO updateSquad(Long matchId, List<Long> playerIds) {
+    public MatchDetailDTO updateSquad(String matchId, List<String> playerIds) {
         Match match = getMatchOrThrow(matchId);
         accessControl.assertCanManageMatch(match);
         assertNotFinished(match);
+        
         List<Player> players = resolvePlayers(playerIds, match.getTeamId());
-        match.setSquad(new ArrayList<>(players));
+        List<String> validIds = players.stream().map(Player::getId).collect(Collectors.toList());
+        match.setSquadPlayerIds(new ArrayList<>(validIds));
 
-        Set<Long> squadIds = players.stream().map(Player::getId).collect(Collectors.toSet());
-        List<Player> filteredLineup = match.getLineup().stream()
-                .filter(p -> squadIds.contains(p.getId()))
+        Set<String> squadIds = new HashSet<>(validIds);
+        List<String> filteredLineup = match.getLineupPlayerIds().stream()
+                .filter(squadIds::contains)
                 .collect(Collectors.toList());
-        match.setLineup(new ArrayList<>(filteredLineup));
+        match.setLineupPlayerIds(new ArrayList<>(filteredLineup));
 
         matchRepository.save(match);
         ensureLiveStats(match);
         return getMatchDetail(matchId);
     }
 
-    @Transactional
-    public MatchDetailDTO updateLineup(Long matchId, List<Long> playerIds) {
+    public MatchDetailDTO updateLineup(String matchId, List<String> playerIds) {
         Match match = getMatchOrThrow(matchId);
         accessControl.assertCanManageMatch(match);
         assertNotFinished(match);
@@ -156,26 +149,25 @@ public class MatchService {
             throw new IllegalArgumentException("El once inicial puede tener como máximo 11 jugadores.");
         }
 
-        Set<Long> squadIds = match.getSquad().stream().map(Player::getId).collect(Collectors.toSet());
+        Set<String> squadIds = new HashSet<>(match.getSquadPlayerIds());
         if (squadIds.isEmpty()) {
             throw new IllegalArgumentException("Primero define la convocatoria del partido.");
         }
 
-        for (Long playerId : playerIds) {
+        for (String playerId : playerIds) {
             if (!squadIds.contains(playerId)) {
                 throw new IllegalArgumentException("El jugador " + playerId + " no está en la convocatoria.");
             }
         }
 
         List<Player> players = resolvePlayers(playerIds, match.getTeamId());
-        match.setLineup(new ArrayList<>(players));
+        match.setLineupPlayerIds(players.stream().map(Player::getId).collect(Collectors.toList()));
         matchRepository.save(match);
         ensureLiveStats(match);
         return getMatchDetail(matchId);
     }
 
-    @Transactional
-    public MatchDetailDTO updateScore(Long matchId, MatchScoreUpdateRequest request) {
+    public MatchDetailDTO updateScore(String matchId, MatchScoreUpdateRequest request) {
         Match match = getMatchOrThrow(matchId);
         accessControl.assertCanManageMatch(match);
         assertNotFinished(match);
@@ -193,12 +185,11 @@ public class MatchService {
         return getMatchDetail(matchId);
     }
 
-    @Transactional
-    public List<LiveStatDTO> updateLiveStats(Long matchId, List<LiveStatDTO> updates) {
+    public List<LiveStatDTO> updateLiveStats(String matchId, List<LiveStatDTO> updates) {
         Match match = getMatchOrThrow(matchId);
         accessControl.assertCanManageMatch(match);
         assertNotFinished(match);
-        Set<Long> starterIds = match.getLineup().stream().map(Player::getId).collect(Collectors.toSet());
+        Set<String> starterIds = new HashSet<>(match.getLineupPlayerIds());
 
         for (LiveStatDTO dto : updates) {
             Statistic stat = statisticRepository
@@ -213,44 +204,53 @@ public class MatchService {
         }
 
         return statisticRepository.findByMatchIdWithPlayer(matchId).stream()
-                .map(s -> new LiveStatDTO(s, starterIds.contains(s.getPlayer().getId())))
+                .map(s -> {
+                    Player p = playerService.findById(s.getPlayerId()).orElse(new Player());
+                    return new LiveStatDTO(s, p, starterIds.contains(s.getPlayerId()));
+                })
                 .collect(Collectors.toList());
     }
 
     private MatchDetailDTO buildDetail(Match match) {
-        Long id = match.getId();
-        match.setSquad(matchRepository.findSquadPlayersByMatchId(id));
-        match.setLineup(matchRepository.findLineupPlayersByMatchId(id));
+        String id = match.getId();
+        List<Player> squadPlayers = matchRepository.findSquadPlayersByMatchId(id);
+        List<Player> lineupPlayers = matchRepository.findLineupPlayersByMatchId(id);
 
-        Set<Long> starterIds = match.getLineup().stream()
+        Set<String> starterIds = lineupPlayers.stream()
                 .filter(Objects::nonNull)
                 .map(Player::getId)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
+                
         List<LiveStatDTO> stats = statisticRepository.findByMatchIdWithPlayer(id).stream()
-                .filter(s -> s.getPlayer() != null)
-                .map(s -> new LiveStatDTO(s, starterIds.contains(s.getPlayer().getId())))
+                .filter(s -> s.getPlayerId() != null)
+                .map(s -> {
+                    Player p = squadPlayers.stream().filter(sp -> s.getPlayerId().equals(sp.getId())).findFirst().orElse(new Player());
+                    return new LiveStatDTO(s, p, starterIds.contains(s.getPlayerId()));
+                })
                 .collect(Collectors.toList());
-        return new MatchDetailDTO(match, stats);
+                
+        // Necesitamos pasar squad y lineup players al DTO. El DTO usa Match, pero no tiene squad/lineup entities ya.
+        // El DTO asume match.getSquad(). Lo arreglaremos enviando las listas explícitamente si DTO lo requiere,
+        // pero vamos a arreglar MatchDetailDTO.
+        return new MatchDetailDTO(match, stats, squadPlayers, lineupPlayers);
     }
 
     private void ensureLiveStats(Match match) {
         String label = buildMatchLabel(match);
-        Set<Long> squadIds = match.getSquad().stream()
-                .filter(Objects::nonNull)
-                .map(Player::getId)
-                .filter(id -> id != null)
-                .collect(Collectors.toSet());
+        Set<String> squadIds = new HashSet<>(match.getSquadPlayerIds());
+        
+        List<Player> squadPlayers = matchRepository.findSquadPlayersByMatchId(match.getId());
 
-        for (Player player : match.getSquad()) {
+        for (Player player : squadPlayers) {
             if (player == null || player.getId() == null) {
                 continue;
             }
             statisticRepository.findByMatchEntityIdAndPlayerId(match.getId(), player.getId())
                     .orElseGet(() -> {
                         Statistic stat = new Statistic();
-                        stat.setPlayer(player);
-                        stat.setMatchEntity(match);
+                        stat.setPlayerId(player.getId());
+                        stat.setMatchId(match.getId());
                         stat.setMatch(label);
                         return statisticRepository.save(stat);
                     });
@@ -258,22 +258,19 @@ public class MatchService {
 
         List<Statistic> all = statisticRepository.findByMatchIdWithPlayer(match.getId());
         for (Statistic stat : all) {
-            if (stat.getPlayer() == null || stat.getPlayer().getId() == null) {
-                statisticRepository.delete(stat);
+            if (stat.getPlayerId() == null) {
+                statisticRepository.deleteById(stat.getId());
                 continue;
             }
-            if (!squadIds.contains(stat.getPlayer().getId())) {
-                statisticRepository.delete(stat);
+            if (!squadIds.contains(stat.getPlayerId())) {
+                statisticRepository.deleteById(stat.getId());
             }
         }
     }
 
-    private Match getMatchOrThrow(Long matchId) {
-        Match match = matchRepository.findById(matchId)
+    private Match getMatchOrThrow(String matchId) {
+        return matchRepository.findById(matchId)
                 .orElseThrow(() -> new IllegalArgumentException("Partido no encontrado"));
-        match.setSquad(matchRepository.findSquadPlayersByMatchId(matchId));
-        match.setLineup(matchRepository.findLineupPlayersByMatchId(matchId));
-        return match;
     }
 
     private void assertNotFinished(Match match) {
@@ -282,16 +279,16 @@ public class MatchService {
         }
     }
 
-    private List<Player> resolvePlayers(List<Long> playerIds, Long teamId) {
+    private List<Player> resolvePlayers(List<String> playerIds, String teamId) {
         List<Player> players = new ArrayList<>();
-        Set<Long> seen = new HashSet<>();
-        for (Long id : playerIds) {
+        Set<String> seen = new HashSet<>();
+        for (String id : playerIds) {
             if (id == null || !seen.add(id)) {
                 continue;
             }
             Player player = playerService.findById(id)
                     .orElseThrow(() -> new IllegalArgumentException("Jugador no encontrado: " + id));
-            if (teamId != null && (player.getTeam() == null || !teamId.equals(player.getTeam().getId()))) {
+            if (teamId != null && (player.getTeamId() == null || !teamId.equals(player.getTeamId()))) {
                 throw new IllegalArgumentException("El jugador " + id + " no pertenece al equipo del partido.");
             }
             players.add(player);
@@ -305,4 +302,3 @@ public class MatchService {
         return date.isBlank() ? location : location + " · " + date;
     }
 }
-

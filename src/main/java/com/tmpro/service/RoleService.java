@@ -5,9 +5,11 @@ import com.tmpro.repository.RoleRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
-@SuppressWarnings("null")
+@SuppressWarnings("all")
 public class RoleService {
 
     private static final List<String> REGISTERABLE_ROLES = List.of("USER", "TRAINER");
@@ -23,12 +25,17 @@ public class RoleService {
     }
 
     public List<Role> findRegisterable() {
-        return roleRepository.findByNameIgnoreCaseIn(REGISTERABLE_ROLES);
+        return roleRepository.findAll().stream()
+            .filter(r -> REGISTERABLE_ROLES.contains(r.getName().toUpperCase()))
+            .collect(Collectors.toList());
     }
 
-    public Role getById(Long id) {
+    public Role getById(String id) {
         return roleRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Rol no encontrado: " + id));
     }
-}
 
+    public Optional<Role> findByName(String name) {
+        return roleRepository.findByName(name);
+    }
+}

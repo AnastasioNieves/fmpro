@@ -1,79 +1,50 @@
 package com.tmpro.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import jakarta.persistence.*;
-
-@Entity
-@Table(name = "statistics")
 public class Statistic {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
+    private String playerId;
+    private String matchId; // Puede ser null si es global
+    private String match = ""; // Nombre del partido
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "player_id", nullable = false)
-    @JsonIgnoreProperties({"team", "hibernateLazyInitializer", "handler"})
-    private Player player;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "match_id")
-    @JsonIgnore
-    private Match matchEntity;
-
-    private String match = "";
-
-    @Column(columnDefinition = "integer default 0 not null")
     private int goals = 0;
-    @Column(columnDefinition = "integer default 0 not null")
     private int assists = 0;
-    @Column(columnDefinition = "integer default 0 not null")
     private int minutesPlayed = 0;
-    @Column(columnDefinition = "integer default 0 not null")
     private int shotsTotal = 0;
-    @Column(columnDefinition = "integer default 0 not null")
     private int shotsOnTarget = 0;
-    @Column(columnDefinition = "integer default 0 not null")
     private int passesTotal = 0;
-    @Column(columnDefinition = "integer default 0 not null")
     private int passesCompleted = 0;
-    @Column(columnDefinition = "integer default 0 not null")
     private int duelsTotal = 0;
-    @Column(columnDefinition = "integer default 0 not null")
     private int duelsWon = 0;
-    @Column(columnDefinition = "integer default 0 not null")
     private int interceptions = 0;
-    @Column(columnDefinition = "integer default 0 not null")
     private int saves = 0;
-    @Column(columnDefinition = "integer default 0 not null")
     private int goalsConceded = 0;
 
     public Statistic() {
     }
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 
-    public Player getPlayer() {
-        return player;
+    public String getPlayerId() {
+        return playerId;
     }
 
-    public void setPlayer(Player player) {
-        this.player = player;
+    public void setPlayerId(String playerId) {
+        this.playerId = playerId;
     }
 
-    public Match getMatchEntity() {
-        return matchEntity;
+    public String getMatchId() {
+        return matchId;
     }
 
-    public void setMatchEntity(Match matchEntity) {
-        this.matchEntity = matchEntity;
+    public void setMatchId(String matchId) {
+        this.matchId = matchId;
     }
 
     public String getMatch() {
@@ -84,29 +55,14 @@ public class Statistic {
         this.match = match;
     }
 
-    public int getGoals() {
-        return goals;
-    }
+    public int getGoals() { return goals; }
+    public void setGoals(int goals) { this.goals = goals; }
 
-    public void setGoals(int goals) {
-        this.goals = goals;
-    }
+    public int getAssists() { return assists; }
+    public void setAssists(int assists) { this.assists = assists; }
 
-    public int getAssists() {
-        return assists;
-    }
-
-    public void setAssists(int assists) {
-        this.assists = assists;
-    }
-
-    public int getMinutesPlayed() {
-        return minutesPlayed;
-    }
-
-    public void setMinutesPlayed(int minutesPlayed) {
-        this.minutesPlayed = minutesPlayed;
-    }
+    public int getMinutesPlayed() { return minutesPlayed; }
+    public void setMinutesPlayed(int minutesPlayed) { this.minutesPlayed = minutesPlayed; }
 
     public int getShotsTotal() { return shotsTotal; }
     public void setShotsTotal(int shotsTotal) { this.shotsTotal = shotsTotal; }

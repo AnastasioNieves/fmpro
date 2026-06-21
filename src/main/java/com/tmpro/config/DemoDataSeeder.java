@@ -42,7 +42,7 @@ public class DemoDataSeeder {
             {"22", "Delantero", "Víctor Campos"},
     };
 
-    public void seed(TeamRepository teamRepository, PlayerRepository playerRepository, Long ownerUserId) {
+    public void seed(TeamRepository teamRepository, PlayerRepository playerRepository, String ownerUserId) {
         Team team = teamRepository.findByName(DEMO_TEAM);
         if (team == null) {
             team = new Team();
@@ -78,7 +78,18 @@ public class DemoDataSeeder {
             player.setDorsal(dorsal);
             player.setPosition(position);
             player.setName(name);
-            player.setTeam(team);
+            player.setTeamId(team.getId());
+            
+            if ("Portero".equalsIgnoreCase(position)) {
+                player.setPhotoUrl("/uploads/players/gk.png");
+            } else if ("Defensa".equalsIgnoreCase(position)) {
+                player.setPhotoUrl("/uploads/players/def.png");
+            } else if ("Centrocampista".equalsIgnoreCase(position)) {
+                player.setPhotoUrl("/uploads/players/mid.png");
+            } else {
+                player.setPhotoUrl("/uploads/players/fwd.png");
+            }
+
             playerRepository.save(player);
             created++;
         }

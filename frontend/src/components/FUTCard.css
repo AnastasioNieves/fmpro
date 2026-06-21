@@ -1,0 +1,158 @@
+/* FUT Card Styles */
+.fut-card {
+  position: relative;
+  width: 220px;
+  height: 310px;
+  background: linear-gradient(135deg, #f0dfa8, #c49a3f, #f0dfa8);
+  border-radius: 12px;
+  clip-path: polygon(10% 0, 90% 0, 100% 10%, 100% 85%, 50% 100%, 0 85%, 0 10%);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+  color: #3b2a00;
+  font-family: 'Inter', system-ui, sans-serif;
+  text-transform: uppercase;
+  transition: transform 0.3s ease, filter 0.3s ease;
+  user-select: none;
+  margin: 10px auto;
+}
+
+.fut-card:hover {
+  transform: translateY(-5px) scale(1.05);
+  filter: brightness(1.1);
+  z-index: 10;
+}
+
+.fut-card--totw {
+  background: linear-gradient(135deg, #111, #2b2b2b, #000);
+  color: #f0dfa8;
+}
+
+.fut-card__bg {
+  position: absolute;
+  top: 4px; left: 4px; right: 4px; bottom: 4px;
+  background: linear-gradient(135deg, #e3cd82, #b5892b, #e3cd82);
+  clip-path: polygon(10% 0, 90% 0, 100% 10%, 100% 85%, 50% 100%, 0 85%, 0 10%);
+  z-index: 0;
+  border: 1px solid rgba(255,255,255,0.4);
+}
+
+.fut-card--totw .fut-card__bg {
+  background: linear-gradient(135deg, #1a1a1a, #2a2a2a, #1a1a1a);
+  border: 1px solid #c49a3f;
+}
+
+.fut-card__top, .fut-card__bottom {
+  position: relative;
+  z-index: 1;
+}
+
+.fut-card__top {
+  display: flex;
+  height: 150px;
+}
+
+.fut-card__info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  width: 35%;
+  padding-top: 25px;
+}
+
+.fut-card__rating {
+  font-size: 32px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.fut-card__position {
+  font-size: 15px;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+.fut-card__photo-container {
+  width: 65%;
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.fut-card__photo {
+  width: 140px;
+  height: 140px;
+  object-fit: cover;
+  object-position: top;
+  border-radius: 50%;
+  mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+}
+
+.fut-card__placeholder {
+  width: 100px;
+  height: 100px;
+  background: rgba(0,0,0,0.1);
+  border-radius: 50%;
+  margin-bottom: 10px;
+}
+
+.fut-card__bottom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 10px;
+}
+
+.fut-card__name {
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  margin-top: 5px;
+  text-align: center;
+}
+
+.fut-card__divider {
+  width: 80%;
+  height: 1px;
+  background: rgba(0,0,0,0.2);
+  margin: 8px 0;
+}
+
+.fut-card--totw .fut-card__divider {
+  background: rgba(240, 223, 168, 0.3);
+}
+
+.fut-card__stats {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  padding: 0 5px;
+}
+
+.fut-card__stat-col {
+  display: flex;
+  flex-direction: column;
+  width: 48%;
+}
+
+.fut-card__stat {
+  display: flex;
+  align-items: center;
+  font-size: 15px;
+  margin-bottom: 4px;
+}
+
+.fut-card__stat .val {
+  font-weight: 900;
+  width: 28px;
+  text-align: right;
+  margin-right: 6px;
+}
+
+.fut-card__stat .lbl {
+  font-weight: 500;
+}

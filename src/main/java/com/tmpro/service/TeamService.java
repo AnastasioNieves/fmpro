@@ -8,14 +8,13 @@ import com.tmpro.security.CurrentUserService;
 import com.tmpro.security.SecurityUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
-@SuppressWarnings("null")
+@SuppressWarnings("all")
 public class TeamService {
 
     @Autowired
@@ -27,14 +26,12 @@ public class TeamService {
     @Autowired
     private CurrentUserService currentUserService;
 
-    @Transactional(readOnly = true)
     public List<TeamDTO> getPublicTeams() {
         return teamRepository.findAllAsDTO();
     }
 
-    @Transactional(readOnly = true)
     public List<TeamDTO> getAllTeams() {
-        List<Long> visible = accessControl.getVisibleTeamIds();
+        List<String> visible = accessControl.getVisibleTeamIdsStr();
         if (visible.isEmpty()) {
             return List.of();
         }
@@ -43,13 +40,11 @@ public class TeamService {
                 .collect(Collectors.toList());
     }
 
-    @Transactional(readOnly = true)
-    public Team getTeamById(Long id) {
-        accessControl.assertCanViewTeam(id);
+    public Team getTeamById(String id) {
+        accessControl.assertCanViewTeamStr(id);
         return teamRepository.findById(id).orElse(null);
     }
 
-    @Transactional
     public Team saveTeam(Team team) {
         SecurityUser user = accessControl.requireUser();
         if (!currentUserService.canManage(user)) {
@@ -64,9 +59,8 @@ public class TeamService {
         return teamRepository.save(team);
     }
 
-    @Transactional
-    public Team updateTeam(Long id, Team team) {
-        accessControl.assertCanManageTeam(id);
+    public Team updateTeam(String id, Team team) {
+        accessControl.assertCanManageTeamStr(id);
         team.setId(id);
         Team existing = teamRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Equipo no encontrado"));
@@ -74,18 +68,16 @@ public class TeamService {
         return teamRepository.save(team);
     }
 
-    @Transactional
-    public boolean deleteTeam(Long id) {
-        if (!teamRepository.existsById(id)) {
+    public boolean deleteTeam(String id) {
+        if (teamRepository.findById(id).isEmpty()) {
             return false;
         }
-        accessControl.assertCanManageTeam(id);
+        accessControl.assertCanManageTeamStr(id);
         teamRepository.deleteById(id);
         return true;
     }
 
-    public Optional<Team> findById(Long id) {
+    public Optional<Team> findById(String id) {
         return teamRepository.findById(id);
     }
 }
-

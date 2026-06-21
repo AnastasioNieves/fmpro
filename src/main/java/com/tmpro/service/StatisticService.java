@@ -3,18 +3,18 @@ package com.tmpro.service;
 import com.tmpro.model.Statistic;
 import com.tmpro.model.Player;
 import com.tmpro.model.dto.StatisticsSummaryDTO;
+import com.tmpro.model.StatisticDTO;
 import com.tmpro.repository.StatisticRepository;
 import com.tmpro.repository.PlayerRepository;
 import com.tmpro.security.AccessControlService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
 
 @Service
-@SuppressWarnings("null")
+@SuppressWarnings("all")
 public class StatisticService {
 
     @Autowired
@@ -28,45 +28,54 @@ public class StatisticService {
 
     // Crear una nueva estadística
     public Statistic createStatistic(Statistic statistic) {
-        if (statistic.getPlayer() == null || statistic.getPlayer().getId() == null) {
+        if (statistic.getPlayerId() == null || statistic.getPlayerId().isEmpty()) {
             throw new IllegalArgumentException("El jugador o su ID no pueden ser nulos");
         }
 
-        Player player = playerRepository.findById(statistic.getPlayer().getId())
+        Player player = playerRepository.findById(statistic.getPlayerId())
                 .orElseThrow(() -> new RuntimeException("Jugador no encontrado"));
 
-        statistic.setPlayer(player);
+        statistic.setPlayerId(player.getId());
         return statisticRepository.save(statistic);
     }
 
-
-    @Transactional(readOnly = true)
     public List<Statistic> getAllStatistic() {
         return statisticRepository.findAllWithPlayer();
     }
 
-    @Transactional(readOnly = true)
-    public Optional<Statistic> getStatisticById(Long id) {
+    public Optional<Statistic> getStatisticById(String id) {
         return statisticRepository.findByIdWithPlayer(id);
     }
 
-    @Transactional(readOnly = true)
-    public List<Statistic> getStatisticsByPlayerId(Long playerId) {
+    public List<Statistic> getStatisticsByPlayerId(String playerId) {
         Player player = playerRepository.findById(playerId)
                 .orElseThrow(() -> new IllegalArgumentException("Jugador no encontrado"));
-        if (player.getTeam() != null) {
-            accessControl.assertCanViewTeam(player.getTeam().getId());
+        if (player.getTeamId() != null) {
+            accessControl.assertCanViewTeamStr(player.getTeamId());
         }
         return statisticRepository.findByPlayerIdWithPlayer(playerId);
     }
 
-    @Transactional(readOnly = true)
-    public List<Statistic> getStatisticsByTeamId(Long teamId) {
-        accessControl.assertCanViewTeam(teamId);
-        return statisticRepository.findByTeamIdWithPlayer(teamId);
+    public List<Statistic> getStatisticsByTeamId(String teamId) {
+        accessControl.assertCanViewTeamStr(teamId);
+        List<Player> teamPlayers = playerRepository.findByTeamId(teamId);
+        List<String> playerIds = teamPlayers.stream().map(Player::getId).collect(java.util.stream.Collectors.toList());
+        return statisticRepository.findByPlayerIds(playerIds);
     }
 
-    @Transactional(readOnly = true)
+    public List<StatisticDTO> getStatisticsDTOByTeamId(String teamId) {
+        accessControl.assertCanViewTeamStr(teamId);
+        List<Player> teamPlayers = playerRepository.findByTeamId(teamId);
+        java.util.Map<String, Player> playerMap = teamPlayers.stream().collect(java.util.stream.Collectors.toMap(Player::getId, p -> p));
+        
+        List<String> playerIds = teamPlayers.stream().map(Player::getId).collect(java.util.stream.Collectors.toList());
+        List<Statistic> stats = statisticRepository.findByPlayerIds(playerIds);
+        
+        return stats.stream()
+                .map(s -> new StatisticDTO(s, playerMap.get(s.getPlayerId())))
+                .collect(java.util.stream.Collectors.toList());
+    }
+
     public StatisticsSummaryDTO getSummary() {
         List<Object[]> results = statisticRepository.getAggregatedSummary();
         if (results == null || results.isEmpty() || results.get(0) == null) {
@@ -79,8 +88,7 @@ public class StatisticService {
         return new StatisticsSummaryDTO(count, goals, assists);
     }
 
-    @Transactional
-    public Statistic updateStatistic(Long id, Statistic updatedStatistic) {
+    public Statistic updateStatistic(String id, Statistic updatedStatistic) {
         Statistic saved = statisticRepository.findById(id)
                 .map(statistic -> {
                     statistic.setGoals(updatedStatistic.getGoals());
@@ -103,12 +111,11 @@ public class StatisticService {
     }
 
     // Eliminar una estadística
-    public boolean deleteStatistic(Long id) {
-        if (statisticRepository.existsById(id)) {
+    public boolean deleteStatistic(String id) {
+        if (statisticRepository.findById(id).isPresent()) {
             statisticRepository.deleteById(id);
             return true;
         }
         return false;
     }
 }
-

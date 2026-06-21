@@ -2,24 +2,24 @@ package com.tmpro.model;
 
 public class TeamDTO {
 
-    private Long id;
+    private String id;
     private String name;
     private String coach;
 
     public TeamDTO() {
     }
 
-    public TeamDTO(Long id, String name, String coach) {
+    public TeamDTO(String id, String name, String coach) {
         this.id = id;
         this.name = name;
         this.coach = coach;
     }
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 

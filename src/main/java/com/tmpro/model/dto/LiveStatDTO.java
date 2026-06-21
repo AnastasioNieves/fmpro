@@ -1,11 +1,12 @@
 package com.tmpro.model.dto;
 
 import com.tmpro.model.Statistic;
+import com.tmpro.model.Player;
 
 public class LiveStatDTO {
 
-    private Long id;
-    private Long playerId;
+    private String id;
+    private String playerId;
     private String playerName;
     private String dorsal;
     private String position;
@@ -17,31 +18,31 @@ public class LiveStatDTO {
     public LiveStatDTO() {
     }
 
-    public LiveStatDTO(Statistic stat, boolean starter) {
+    public LiveStatDTO(Statistic stat, Player player, boolean starter) {
         this.id = stat.getId();
-        this.playerId = stat.getPlayer().getId();
-        this.playerName = stat.getPlayer().getName();
-        this.dorsal = stat.getPlayer().getDorsal();
-        this.position = stat.getPlayer().getPosition();
+        this.playerId = player.getId();
+        this.playerName = player.getName();
+        this.dorsal = player.getDorsal();
+        this.position = player.getPosition();
         this.goals = stat.getGoals();
         this.assists = stat.getAssists();
         this.minutesPlayed = stat.getMinutesPlayed();
         this.starter = starter;
     }
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 
-    public Long getPlayerId() {
+    public String getPlayerId() {
         return playerId;
     }
 
-    public void setPlayerId(Long playerId) {
+    public void setPlayerId(String playerId) {
         this.playerId = playerId;
     }
 

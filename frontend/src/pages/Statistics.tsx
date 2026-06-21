@@ -109,8 +109,8 @@ export function Statistics() {
     try {
       const path =
         effectiveFilterMode === 'team'
-          ? endpoints.statisticsByTeam(Number(selectedTeamId))
-          : endpoints.statisticsByPlayer(Number(selectedPlayerId));
+          ? endpoints.statisticsByTeam(selectedTeamId)
+          : endpoints.statisticsByPlayer(selectedPlayerId);
       const data = await api.get<Statistic[]>(path);
       setStats(data);
     } catch (err) {
@@ -139,8 +139,8 @@ export function Statistics() {
     try {
       const path =
         filterMode === 'team'
-          ? endpoints.reportTeam(Number(selectedTeamId))
-          : endpoints.reportPlayer(Number(selectedPlayerId));
+          ? endpoints.reportTeam(selectedTeamId)
+          : endpoints.reportPlayer(selectedPlayerId);
       const blob = await api.download(path);
       const slug = selectionLabel?.replace(/\s+/g, '-').toLowerCase() ?? 'informe';
       downloadBlob(blob, `informe-${filterMode === 'team' ? 'equipo' : 'jugador'}-${slug}.pdf`);

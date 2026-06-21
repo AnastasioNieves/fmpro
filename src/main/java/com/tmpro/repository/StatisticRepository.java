@@ -1,36 +1,90 @@
 package com.tmpro.repository;
 
 import com.tmpro.model.Statistic;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 @Repository
-public interface StatisticRepository extends JpaRepository<Statistic, Long> {
+public class StatisticRepository {
 
-    List<Statistic> findByPlayerId(Long playerId);
+    private final Map<String, Statistic> data = new ConcurrentHashMap<>();
 
-    @Query("SELECT s FROM Statistic s JOIN FETCH s.player ORDER BY s.id DESC")
-    List<Statistic> findAllWithPlayer();
+    public Statistic save(Statistic statistic) {
+        if (statistic.getId() == null || statistic.getId().isEmpty()) {
+            statistic.setId(UUID.randomUUID().toString());
+        }
+        data.put(statistic.getId(), statistic);
+        return statistic;
+    }
 
-    @Query("SELECT s FROM Statistic s JOIN FETCH s.player WHERE s.id = :id")
-    Optional<Statistic> findByIdWithPlayer(@Param("id") Long id);
+    public Optional<Statistic> findById(String id) {
+        return Optional.ofNullable(data.get(id));
+    }
 
-    @Query("SELECT s FROM Statistic s JOIN FETCH s.player WHERE s.player.id = :playerId ORDER BY s.id DESC")
-    List<Statistic> findByPlayerIdWithPlayer(@Param("playerId") Long playerId);
+    public List<Statistic> findAll() {
+        return new ArrayList<>(data.values());
+    }
 
-    @Query("SELECT s FROM Statistic s JOIN FETCH s.player p WHERE p.team.id = :teamId ORDER BY p.dorsal, s.id DESC")
-    List<Statistic> findByTeamIdWithPlayer(@Param("teamId") Long teamId);
+    public void deleteById(String id) {
+        data.remove(id);
+    }
 
-    @Query("SELECT s FROM Statistic s JOIN FETCH s.player WHERE s.matchEntity.id = :matchId")
-    List<Statistic> findByMatchIdWithPlayer(@Param("matchId") Long matchId);
+    public List<Statistic> findByPlayerId(String playerId) {
+        return data.values().stream()
+                .filter(s -> s.getPlayerId() != null && s.getPlayerId().equals(playerId))
+                .collect(Collectors.toList());
+    }
 
-    Optional<Statistic> findByMatchEntityIdAndPlayerId(Long matchEntityId, Long playerId);
+    public List<Statistic> findAllWithPlayer() {
+        return findAll();
+    }
 
-    @Query("SELECT COUNT(s), SUM(s.goals), SUM(s.assists) FROM Statistic s")
-    List<Object[]> getAggregatedSummary();
+    public Optional<Statistic> findByIdWithPlayer(String id) {
+        return findById(id);
+    }
+
+    public List<Statistic> findByPlayerIdWithPlayer(String playerId) {
+        return findByPlayerId(playerId);
+    }
+
+    public List<Statistic> findByTeamIdWithPlayer(String teamId) {
+        return new ArrayList<>();
+    }
+
+    public List<Statistic> findByMatchIdWithPlayer(String matchId) {
+        return data.values().stream()
+                .filter(s -> s.getMatchId() != null && s.getMatchId().equals(matchId))
+                .collect(Collectors.toList());
+    }
+
+    public List<Statistic> findByPlayerIds(List<String> playerIds) {
+        if (playerIds == null || playerIds.isEmpty()) return new ArrayList<>();
+        return data.values().stream()
+                .filter(s -> playerIds.contains(s.getPlayerId()))
+                .collect(Collectors.toList());
+    }
+
+    public Optional<Statistic> findByMatchEntityIdAndPlayerId(String matchId, String playerId) {
+        return data.values().stream()
+                .filter(s -> s.getMatchId() != null && s.getMatchId().equals(matchId) &&
+                             s.getPlayerId() != null && s.getPlayerId().equals(playerId))
+                .findFirst();
+    }
+
+    public List<Object[]> getAggregatedSummary() {
+        long count = data.size();
+        long sumGoals = data.values().stream().mapToLong(s -> s.getGoals()).sum();
+        long sumAssists = data.values().stream().mapToLong(s -> s.getAssists()).sum();
+        
+        List<Object[]> res = new ArrayList<>();
+        res.add(new Object[]{count, sumGoals, sumAssists});
+        return res;
+    }
 }

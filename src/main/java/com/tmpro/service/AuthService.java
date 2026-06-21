@@ -4,62 +4,36 @@ import com.tmpro.model.AuthResponse;
 import com.tmpro.model.Role;
 import com.tmpro.model.User;
 import com.tmpro.repository.UserRepository;
-import com.tmpro.security.SecurityUser;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.stereotype.Service;
 
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
-
 import java.util.Optional;
 
 @Service
-@SuppressWarnings("null")
 public class AuthService {
 
     private final UserRepository userRepository;
     private final RoleService roleService;
-    private final AuthenticationManager authenticationManager;
 
     public AuthService(
             UserRepository userRepository,
-            RoleService roleService,
-            AuthenticationManager authenticationManager
+            RoleService roleService
     ) {
         this.userRepository = userRepository;
         this.roleService = roleService;
-        this.authenticationManager = authenticationManager;
     }
 
     public AuthResponse login(String username, String password, HttpServletRequest request) {
-        if (username == null || username.isBlank() || password == null || password.isBlank()) {
-            throw new IllegalArgumentException("Usuario y contraseña son obligatorios.");
-        }
-
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(username.trim(), password));
-
-        SecurityContext context = SecurityContextHolder.createEmptyContext();
-        context.setAuthentication(authentication);
-        SecurityContextHolder.setContext(context);
-
-        HttpSession session = request.getSession(true);
-        session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
-
-        return buildAuthResponse((SecurityUser) authentication.getPrincipal());
+        // En Firebase Auth, el login real se hace en el frontend. 
+        // Si se llama a este endpoint, simplemente podemos resolver el usuario si el token vino en el header
+        // o lanzar una excepción de que debe loguearse por Firebase.
+        return resolveCurrentUser().orElseThrow(() -> new IllegalArgumentException("El usuario debe loguearse usando Firebase en el cliente."));
     }
 
     public void logout(HttpServletRequest request) {
-        HttpSession session = request.getSession(false);
-        if (session != null) {
-            session.invalidate();
-        }
         SecurityContextHolder.clearContext();
     }
 
@@ -67,16 +41,26 @@ public class AuthService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null
                 || !authentication.isAuthenticated()
-                || authentication instanceof AnonymousAuthenticationToken
-                || !(authentication.getPrincipal() instanceof SecurityUser user)) {
+                || authentication instanceof AnonymousAuthenticationToken) {
             return Optional.empty();
         }
-        return Optional.of(buildAuthResponse(user));
+        
+        // El FirebaseTokenFilter pone el UID de Firebase como el principal de la autenticación
+        String uid = (String) authentication.getPrincipal();
+        return Optional.of(buildAuthResponse(uid));
     }
 
-    private AuthResponse buildAuthResponse(SecurityUser user) {
-        User entity = userRepository.findById(user.getId())
-                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+    private AuthResponse buildAuthResponse(String uid) {
+        User entity = userRepository.findById(uid)
+                .orElseGet(() -> {
+                    User newUser = new User();
+                    newUser.setId(uid);
+                    newUser.setUsername("User-" + uid.substring(0, Math.min(uid.length(), 5)));
+                    Role userRole = roleService.findByName("USER")
+                            .orElseThrow(() -> new IllegalStateException("Role USER not found"));
+                    newUser.setRoleId(userRole.getId());
+                    return userRepository.save(newUser);
+                });
         Role role = roleService.getById(entity.getRoleId());
         return new AuthResponse(
                 entity.getId(),
@@ -87,4 +71,3 @@ public class AuthService {
         );
     }
 }
-

@@ -5,13 +5,13 @@ import java.util.List;
 
 public class PlayerIdsRequest {
 
-    private List<Long> playerIds = new ArrayList<>();
+    private List<String> playerIds = new ArrayList<>();
 
-    public List<Long> getPlayerIds() {
+    public List<String> getPlayerIds() {
         return playerIds;
     }
 
-    public void setPlayerIds(List<Long> playerIds) {
+    public void setPlayerIds(List<String> playerIds) {
         this.playerIds = playerIds;
     }
 }

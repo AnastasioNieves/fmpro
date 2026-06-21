@@ -4,7 +4,7 @@ package com.tmpro.model;
 
 public class PlayerDTO {
 
-    private Long id;
+    private String id;
 
     private String name;  // Clave primaria
 
@@ -28,19 +28,19 @@ public class PlayerDTO {
         this.position = player.getPosition();
         this.dorsal = player.getDorsal();
         this.photoUrl = player.getPhotoUrl();
-        if (player.getTeam() != null) {
-            this.team_id = String.valueOf(player.getTeam().getId());
+        if (player.getTeamId() != null) {
+            this.team_id = player.getTeamId();
         }
     }
 
     // Getters y Setters
 
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 

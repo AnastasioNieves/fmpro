@@ -2,35 +2,25 @@ package com.tmpro.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
-import jakarta.persistence.*;
 
-@Entity
-@Table(name = "users")
 public class User {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(nullable = false, unique = true)
+    private String id;
     private String username;
-
-    @Column(nullable = false)
+    
     @JsonProperty(access = Access.WRITE_ONLY)
     private String password;
 
-    @Column(name = "role_id", nullable = false)
-    private Long roleId;
+    private String roleId;
 
     /** Equipo seguido (rol USER, solo lectura). */
-    @Column(name = "team_id")
-    private Long teamId;
+    private String teamId;
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 
@@ -51,28 +41,28 @@ public class User {
     }
 
     @JsonProperty("roleId")
-    public Long getRoleId() {
+    public String getRoleId() {
         return roleId;
     }
 
-    public void setRoleId(Long roleId) {
+    public void setRoleId(String roleId) {
         this.roleId = roleId;
     }
 
     @com.fasterxml.jackson.annotation.JsonIgnore
-    public Long getRole() {
+    public String getRole() {
         return roleId;
     }
 
-    public void setRole(Long roleId) {
+    public void setRole(String roleId) {
         this.roleId = roleId;
     }
 
-    public Long getTeamId() {
+    public String getTeamId() {
         return teamId;
     }
 
-    public void setTeamId(Long teamId) {
+    public void setTeamId(String teamId) {
         this.teamId = teamId;
     }
 }
